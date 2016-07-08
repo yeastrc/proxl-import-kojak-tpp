@@ -11,11 +11,13 @@ import org.yeastrc.proxl_import.api.xml_dto.FilterablePsmAnnotationType;
 public class PSMAnnotationTypes {
 
 	// Kojak scores
-	public static final String KOJAK_ANNOTATION_TYPE_SCORE = "E-value";
+	public static final String KOJAK_ANNOTATION_TYPE_SCORE = "Score";
 	
 	// iProphet scores
-	public static final String IPROPHET_ANNOTATION_TYPE_SCORE = "Calculated Mass";
+	public static final String IPROPHET_ANNOTATION_TYPE_SCORE = "Probability Score";
 	
+	// PeptideProphet scores
+	public static final String PPROPHET_ANNOTATION_TYPE_SCORE = "Probability Score";
 	
 	/**
 	 * Get the list of filterable PSM annotation types in StavroX data
