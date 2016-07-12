@@ -12,6 +12,8 @@ public class PSMAnnotationTypes {
 
 	// Kojak scores
 	public static final String KOJAK_ANNOTATION_TYPE_SCORE = "Score";
+	public static final String KOJAK_ANNOTATION_TYPE_DELTASCORE = "delta Score";
+	public static final String KOJAK_ANNOTATION_TYPE_PPMERROR = "PPM error";
 	
 	// iProphet scores
 	public static final String IPROPHET_ANNOTATION_TYPE_SCORE = "Probability Score";
@@ -28,11 +30,33 @@ public class PSMAnnotationTypes {
 
 		{
 			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
-			type.setName( KOJAK_ANNOTATION_TYPE_SCORE );
-			type.setDescription( "PLink Expect Value - Number of hits you can expect of this quality by chance." );
+			type.setName( IPROPHET_ANNOTATION_TYPE_SCORE );
+			type.setDescription( "InterProphet Probability Score" );
 			type.setDefaultFilterValue( new BigDecimal( "0.01" ) );
 			type.setDefaultFilter( true );
-			type.setFilterDirection( FilterDirectionType.BELOW );
+			type.setFilterDirection( FilterDirectionType.ABOVE );
+			
+			types.add( type );
+		}
+
+		{
+			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
+			type.setName( PPROPHET_ANNOTATION_TYPE_SCORE );
+			type.setDescription( "PeptideProphet Probability Score" );
+			type.setDefaultFilterValue( new BigDecimal( "0.99" ) );
+			type.setDefaultFilter( true );
+			type.setFilterDirection( FilterDirectionType.ABOVE );
+			
+			types.add( type );
+		}
+		
+		{
+			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
+			type.setName( KOJAK_ANNOTATION_TYPE_SCORE );
+			type.setDescription( "Kojak Score" );
+			type.setDefaultFilterValue( new BigDecimal( "1" ) );
+			type.setDefaultFilter( false );
+			type.setFilterDirection( FilterDirectionType.ABOVE );
 			
 			types.add( type );
 		}
