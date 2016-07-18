@@ -25,11 +25,16 @@ public class PepXMLUtils {
 		// testing crosslinks (is more involved)
 		if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_CROSSLINK ) ) {
 			
-			// if both of the linked peptides are decoy hits, the xlink is a decoy
-			if( isDecoy( decoyString, searchHit.getXlink().getLinkedPeptide().get( 0 ) ) &&
+			// if either of the linked peptides are decoy hits, the xlink is a decoy
+			if( isDecoy( decoyString, searchHit.getXlink().getLinkedPeptide().get( 0 ) ) ||
 				isDecoy( decoyString, searchHit.getXlink().getLinkedPeptide().get( 1 ) ) )
 					return true;
 			
+			return false;
+		}
+		
+		if( searchHit.getProtein() == null ) {
+			System.out.println( searchHit );
 			return false;
 		}
 		
