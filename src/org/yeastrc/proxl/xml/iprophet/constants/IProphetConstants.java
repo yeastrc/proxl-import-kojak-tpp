@@ -6,5 +6,6 @@ public class IProphetConstants {
 	public static final String SEARCH_PROGRAM_NAME_IPROPHET = "iProphet";
 	public static final String SEARCH_PROGRAM_NAME_PPROPHET = "PeptideProphet";
 	
+	public static final String UNMAPPED_STRING = "-_UNMAPPED";
 	
 }

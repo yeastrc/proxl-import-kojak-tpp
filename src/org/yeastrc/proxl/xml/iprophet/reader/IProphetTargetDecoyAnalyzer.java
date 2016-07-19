@@ -13,6 +13,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.Marshaller;
 
+import net.systemsbiology.regis_web.pepxml.AltProteinDataType;
 import net.systemsbiology.regis_web.pepxml.InterprophetResult;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary;
@@ -20,6 +21,7 @@ import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.S
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.AnalysisResult;
+import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.Xlink.LinkedPeptide;
 
 import org.yeastrc.proxl.xml.iprophet.objects.TargetDecoyCounter;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
@@ -67,6 +69,44 @@ public class IProphetTargetDecoyAnalyzer {
 								InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny();
 								
 								BigDecimal score = ipresult.getProbability();
+
+								/*
+								// some test output
+								//if( score.equals( new BigDecimal( "0.990021" ) ) ) {
+								if( score.compareTo( new BigDecimal( "0.990021" ) ) >= 0) {
+									System.out.print( "protein: " + searchHit.getProtein() + "\t" );
+									
+									if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_CROSSLINK ) ) {
+										System.out.print( "lp1: " + searchHit.getXlink().getLinkedPeptide().get( 0 ).getProtein() + "\t" );
+										
+										LinkedPeptide linkedPeptide = searchHit.getXlink().getLinkedPeptide().get( 0 );
+										if( linkedPeptide.getAlternativeProtein() != null ) {
+											System.out.print( "(" );
+											for( AltProteinDataType ap : linkedPeptide.getAlternativeProtein() ) {
+												System.out.print( ap + "," );
+											}
+											System.out.print( ")\t" );
+										}
+										
+										
+										System.out.print( "lp2: " + searchHit.getXlink().getLinkedPeptide().get( 1 ).getProtein() + "\t" );
+										
+										linkedPeptide = searchHit.getXlink().getLinkedPeptide().get( 1 );
+										if( linkedPeptide.getAlternativeProtein() != null ) {
+											System.out.print( "(" );
+											for( AltProteinDataType ap : linkedPeptide.getAlternativeProtein() ) {
+												System.out.print( ap + "," );
+											}
+											System.out.print( ")\t" );
+										}
+										
+									}
+									
+									System.out.print( "\n" );
+								}
+								*/
+								
+								
 								boolean isDecoy = PepXMLUtils.isDecoy( analysis.getDecoyIdentifier(), searchHit );
 								
 								TargetDecoyCounter tdc = null;
@@ -112,9 +152,8 @@ public class IProphetTargetDecoyAnalyzer {
 			tdc.setTargetCount( targetCount );
 			tdc.setDecoyCount( decoyCount );
 			
-			if( targetCount == 15712 ) {
-				System.out.println( "\t" + score + "\t" + targetCount + "\t" + decoyCount + "\t" + ((double)decoyCount / ( targetCount + decoyCount ) ) );
-			}
+			// test output
+			//System.out.println( "\t" + score + "\t" + targetCount + "\t" + decoyCount + "\t" + ((double)decoyCount / ( targetCount + decoyCount ) ) );
 			
 		}
 		
@@ -141,10 +180,6 @@ public class IProphetTargetDecoyAnalyzer {
 		
 		BigDecimal retValue = new BigDecimal( fdr );
 		retValue.setScale( 4, RoundingMode.HALF_UP );
-		
-		
-		System.out.println( "Target count: " + tdc.getTargetCount() );
-		System.out.println( "Decoy count: " + tdc.getDecoyCount() );
 		
 		
 		return retValue;

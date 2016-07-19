@@ -1,5 +1,9 @@
 package org.yeastrc.proxl.xml.iprophet.utils;
 
+import java.util.regex.Pattern;
+
+import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
+
 import net.systemsbiology.regis_web.pepxml.AltProteinDataType;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.Xlink.LinkedPeptide;
@@ -39,17 +43,21 @@ public class PepXMLUtils {
 		}
 		
 		// if we got here, the type is either unlinked or looplinks, the test is the same
-		if( !searchHit.getProtein().contains( decoyString ) )
+		if( !isUnmapped( searchHit.getProtein() ) &&
+			!PepXMLUtils.caseInsensitiveStringContains( decoyString, searchHit.getProtein() ) ) {
 			return false;
+		}
+		
 		
 		// if any of the alternative proteins listed are not decoy proteins, this is not a decoy
-		if( searchHit.getAlternativeProtein() != null ) {
+		if( searchHit.getAlternativeProtein() != null && searchHit.getAlternativeProtein().size() > 0 ) {
 			for( AltProteinDataType ap : searchHit.getAlternativeProtein() ) {
-				if( !ap.getProtein().contains( decoyString ) ) {
+				if( !PepXMLUtils.caseInsensitiveStringContains( decoyString, ap.getProtein() ) ) {
 					return false;
 				}
 			}
 		}
+		
 		
 		return true;	// if we get here, all names for all associated proteins contained the decoy identifier string
 	}
@@ -64,19 +72,27 @@ public class PepXMLUtils {
 	 */
 	private static boolean isDecoy( String decoyString, LinkedPeptide linkedPeptide ) throws Exception {
 		
-		if( !linkedPeptide.getProtein().contains( decoyString ) ) {
+		if( !PepXMLUtils.caseInsensitiveStringContains( decoyString, linkedPeptide.getProtein() ) ) {
 			return false;
 		}
 		
-		if( linkedPeptide.getAlternativeProtein() != null ) {
+		if( linkedPeptide.getAlternativeProtein() != null && linkedPeptide.getAlternativeProtein().size() > 0 ) {
 			for( AltProteinDataType ap : linkedPeptide.getAlternativeProtein() ) {
-				if( !ap.getProtein().contains( decoyString ) ) {
+				if( !PepXMLUtils.caseInsensitiveStringContains( decoyString, ap.getProtein() ) ) {
 					return false;
 				}
 			}
 		}
 		
 		return true;
+	}
+	
+	private static boolean caseInsensitiveStringContains( String testString, String containingString ) {
+		return Pattern.compile(Pattern.quote(testString), Pattern.CASE_INSENSITIVE).matcher(containingString).find();
+	}
+	
+	private static boolean isUnmapped( String testString ) {
+		return PepXMLUtils.caseInsensitiveStringContains( IProphetConstants.UNMAPPED_STRING, testString );
 	}
 	
 }

@@ -25,7 +25,7 @@ public class MainProgram {
 	public void convertSearch( String pepXMLFile ) throws Exception {
 		
 		IProphetAnalysis analysis = IProphetAnalysis.loadAnalysis( testPepXMLFile );
-		analysis.setDecoyIdentifier( "RAND" );
+		analysis.setDecoyIdentifier( "rand" );
 		
 		IProphetTargetDecoyAnalyzer analyzer = IProphetTargetDecoyAnalyzer.getInstance( analysis );
 		analyzer.performAnalysis();
