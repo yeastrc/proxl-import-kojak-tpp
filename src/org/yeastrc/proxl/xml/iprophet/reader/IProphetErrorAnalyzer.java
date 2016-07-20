@@ -1,19 +1,12 @@
 package org.yeastrc.proxl.xml.iprophet.reader;
 
-import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.Marshaller;
-
-import net.systemsbiology.regis_web.pepxml.AltProteinDataType;
 import net.systemsbiology.regis_web.pepxml.InterprophetResult;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary;
@@ -21,8 +14,8 @@ import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.S
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.AnalysisResult;
-import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.Xlink.LinkedPeptide;
 
+import org.yeastrc.proxl.xml.iprophet.objects.ProbabilitySumCounter;
 import org.yeastrc.proxl.xml.iprophet.objects.TargetDecoyCounter;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
 
@@ -34,16 +27,16 @@ import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
  * @author mriffle
  *
  */
-public class IProphetTargetDecoyAnalyzer {
+public class IProphetErrorAnalyzer {
 
-	private static IProphetTargetDecoyAnalyzer _INSTANCE;
-	public static IProphetTargetDecoyAnalyzer getInstance( IProphetAnalysis analysis ) {
-		_INSTANCE = new IProphetTargetDecoyAnalyzer();
+	private static IProphetErrorAnalyzer _INSTANCE;
+	public static IProphetErrorAnalyzer getInstance( IProphetAnalysis analysis ) {
+		_INSTANCE = new IProphetErrorAnalyzer();
 		_INSTANCE.setAnalysis( analysis );
 		
 		return _INSTANCE;
 	}
-	private IProphetTargetDecoyAnalyzer() { }
+	private IProphetErrorAnalyzer() { }
 
 	
 	/**
@@ -54,6 +47,7 @@ public class IProphetTargetDecoyAnalyzer {
 	public void performAnalysis() throws Exception {
 		
 		Map<BigDecimal, TargetDecoyCounter> scoreCounts = new HashMap<BigDecimal, TargetDecoyCounter>();
+		Map<BigDecimal, ProbabilitySumCounter> probabilitySums = new HashMap<BigDecimal, ProbabilitySumCounter>();
 		
 		MsmsPipelineAnalysis xmlAnalysis = analysis.getAnalysis();
 
@@ -69,43 +63,18 @@ public class IProphetTargetDecoyAnalyzer {
 								InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny();
 								
 								BigDecimal score = ipresult.getProbability();
-
-								/*
-								// some test output
-								//if( score.equals( new BigDecimal( "0.990021" ) ) ) {
-								if( score.compareTo( new BigDecimal( "0.990021" ) ) >= 0) {
-									System.out.print( "protein: " + searchHit.getProtein() + "\t" );
-									
-									if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_CROSSLINK ) ) {
-										System.out.print( "lp1: " + searchHit.getXlink().getLinkedPeptide().get( 0 ).getProtein() + "\t" );
-										
-										LinkedPeptide linkedPeptide = searchHit.getXlink().getLinkedPeptide().get( 0 );
-										if( linkedPeptide.getAlternativeProtein() != null ) {
-											System.out.print( "(" );
-											for( AltProteinDataType ap : linkedPeptide.getAlternativeProtein() ) {
-												System.out.print( ap + "," );
-											}
-											System.out.print( ")\t" );
-										}
-										
-										
-										System.out.print( "lp2: " + searchHit.getXlink().getLinkedPeptide().get( 1 ).getProtein() + "\t" );
-										
-										linkedPeptide = searchHit.getXlink().getLinkedPeptide().get( 1 );
-										if( linkedPeptide.getAlternativeProtein() != null ) {
-											System.out.print( "(" );
-											for( AltProteinDataType ap : linkedPeptide.getAlternativeProtein() ) {
-												System.out.print( ap + "," );
-											}
-											System.out.print( ")\t" );
-										}
-										
-									}
-									
-									System.out.print( "\n" );
-								}
-								*/
 								
+								ProbabilitySumCounter psc = null;
+								
+								if( probabilitySums.containsKey( score ) ) {
+									psc = probabilitySums.get( score );
+								} else {
+									psc = new ProbabilitySumCounter();
+									probabilitySums.put( score,  psc );
+								}
+													
+								psc.setpCount( psc.getpCount() + score.doubleValue() );
+								psc.setOneMinusPCount( psc.getOneMinusPCount() + ( 1.0 - score.doubleValue() ) );
 								
 								boolean isDecoy = PepXMLUtils.isDecoy( analysis.getDecoyIdentifier(), searchHit );
 								
@@ -143,7 +112,21 @@ public class IProphetTargetDecoyAnalyzer {
 		
 		int targetCount = 0;
 		int decoyCount = 0;
+		
+		double pSum = 0;
+		double oneMinusPSum = 0;
+		
 		for( BigDecimal score : scoreList ) {
+			
+			ProbabilitySumCounter psc = probabilitySums.get( score );
+			pSum += psc.getpCount();
+			oneMinusPSum += psc.getOneMinusPCount();
+			
+			psc.setpCount( pSum );
+			psc.setOneMinusPCount( oneMinusPSum );
+			
+			
+			
 			TargetDecoyCounter tdc = scoreCounts.get( score );
 			
 			targetCount += tdc.getTargetCount();
@@ -151,23 +134,23 @@ public class IProphetTargetDecoyAnalyzer {
 			
 			tdc.setTargetCount( targetCount );
 			tdc.setDecoyCount( decoyCount );
-			
-			// test output
-			//System.out.println( "\t" + score + "\t" + targetCount + "\t" + decoyCount + "\t" + ((double)decoyCount / ( targetCount + decoyCount ) ) );
-			
+						
 		}
 		
 		this.scoreCounts = scoreCounts;
+		this.probabilitySums = probabilitySums;
 	}
 	
 	/**
-	 * Get the FDR corresponding to a given score from this iprophet search, rounded to 4 digits.
+	 * Get the FDR based on decoy counts for a given probability score--calculated as # decoys / # targets.
+	 * Note, that it is possible for this to be over 1 when there are more decoys than targets found at
+	 * a given score.
 	 * 
 	 * @param score
 	 * @return
 	 * @throws Exception If a target decoy analysis hasn't been done, or if the score wasn't found in the search
 	 */
-	public BigDecimal getFDR( BigDecimal score ) throws Exception {
+	public BigDecimal getSimpleDecoyFDR( BigDecimal score ) throws Exception {
 		
 		if( this.scoreCounts == null )
 			throw new Exception( "Must call performAnalysis() first." );
@@ -176,11 +159,36 @@ public class IProphetTargetDecoyAnalyzer {
 			throw new Exception( "The score: " + score + " was not found in this search." );
 		
 		TargetDecoyCounter tdc = this.scoreCounts.get( score );
-		double fdr = (double)tdc.getDecoyCount() / ( tdc.getDecoyCount() + tdc.getTargetCount() );
+		double fdr = (double)tdc.getDecoyCount() / ( tdc.getTargetCount() );
 		
 		BigDecimal retValue = new BigDecimal( fdr );
-		retValue.setScale( 4, RoundingMode.HALF_UP );
+		retValue = retValue.setScale(4, BigDecimal.ROUND_HALF_EVEN);
 		
+		
+		return retValue;
+	}
+	
+	/**
+	 * Get the error ( numincorr / ( numincorr + numcorr) ) associated with a given probability score, as calculated
+	 * by the TPP
+	 * 
+	 * @param score
+	 * @return
+	 * @throws Exception
+	 */
+	public BigDecimal getError( BigDecimal score ) throws Exception {
+		
+		if( this.probabilitySums == null )
+			throw new Exception( "Must call performAnalysis() first." );
+		
+		if( !this.probabilitySums.containsKey( score ) )
+			throw new Exception( "The score: " + score + " was not found in this search." );
+		
+		ProbabilitySumCounter psc = this.probabilitySums.get( score );
+		double error = (double)psc.getOneMinusPCount() / ( psc.getpCount() + psc.getOneMinusPCount() );
+		
+		BigDecimal retValue = BigDecimal.valueOf( error );
+		retValue = retValue.setScale(4, BigDecimal.ROUND_HALF_EVEN);
 		
 		return retValue;
 	}
@@ -197,6 +205,7 @@ public class IProphetTargetDecoyAnalyzer {
 	
 	private IProphetAnalysis analysis;
 	private Map<BigDecimal, TargetDecoyCounter> scoreCounts;
+	private Map<BigDecimal, ProbabilitySumCounter> probabilitySums;
 	
 	
 }

@@ -9,7 +9,8 @@ import java.math.BigDecimal;
 import java.util.Collection;
 
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
-import org.yeastrc.proxl.xml.iprophet.reader.IProphetTargetDecoyAnalyzer;
+import org.yeastrc.proxl.xml.iprophet.reader.IProphetErrorAnalyzer;
+import org.yeastrc.proxl.xml.iprophet.utils.ScanParsingUtils;
 
 
 /**
@@ -27,8 +28,9 @@ public class MainProgram {
 		IProphetAnalysis analysis = IProphetAnalysis.loadAnalysis( testPepXMLFile );
 		analysis.setDecoyIdentifier( "rand" );
 		
-		IProphetTargetDecoyAnalyzer analyzer = IProphetTargetDecoyAnalyzer.getInstance( analysis );
+		IProphetErrorAnalyzer analyzer = IProphetErrorAnalyzer.getInstance( analysis );
 		analyzer.performAnalysis();
+		
 		
 	}
 	

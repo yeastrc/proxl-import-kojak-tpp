@@ -1,6 +1,7 @@
 package org.yeastrc.proxl.xml.iprophet.builder;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -10,8 +11,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.yeastrc.proxl.xml.iprophet.annotations.PSMAnnotationTypes;
+import org.yeastrc.proxl.xml.iprophet.annotations.PSMDefaultVisibleAnnotationTypes;
+import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
-
+import org.yeastrc.proxl.xml.iprophet.reader.KojakConfReader;
+import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
 import org.yeastrc.proxl_import.api.xml_dto.ConfigurationFile;
 import org.yeastrc.proxl_import.api.xml_dto.ConfigurationFiles;
 import org.yeastrc.proxl_import.api.xml_dto.CrosslinkMass;
@@ -65,7 +70,7 @@ public class XMLBuilder {
 	 * @param outfile The file to which the XML will be written
 	 * @throws Exception
 	 */
-	public void buildAndSaveXML( IProphetAnalysis analysis, File outfile ) throws Exception {
+	public void buildAndSaveXML( IProphetAnalysis analysis, File outfile, String linkerName, KojakConfReader kojakConfReader ) throws Exception {
 
 		ProxlInput proxlInputRoot = new ProxlInput();
 
@@ -80,12 +85,30 @@ public class XMLBuilder {
 		SearchProgram searchProgram = new SearchProgram();
 		searchPrograms.getSearchProgram().add( searchProgram );
 		
-		searchProgram.setName( PLinkConstants.SEARCH_PROGRAM_NAME );
-		searchProgram.setDisplayName( PLinkConstants.SEARCH_PROGRAM_NAME );
-		searchProgram.setVersion( PLinkConstants.SEARCH_PROGRAM_VERSION );
+		// add interprophet
+		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
+		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
+		searchProgram.setVersion( PepXMLUtils.getVersion( analysis ) );
+
+		// add peptideprophet
+		searchProgram = new SearchProgram();
+		searchPrograms.getSearchProgram().add( searchProgram );
+		
+		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET );
+		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET  );
+		searchProgram.setVersion( PepXMLUtils.getVersion( analysis ) );
+		
+		// add kojak
+		searchProgram = new SearchProgram();
+		searchPrograms.getSearchProgram().add( searchProgram );
+		
+		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET );
+		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET  );
+		searchProgram.setVersion( PepXMLUtils.getVersion( analysis ) );
+		
 		
 		//
-		// Define the annotation types present in PLink data
+		// Define the annotation types present in the data
 		//
 		PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
 		searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
@@ -118,16 +141,18 @@ public class XMLBuilder {
 		Linker linker = new Linker();
 		linkers.getLinker().add( linker );
 		
-		linker.setName( params.getLinker().getProxlName() );
+		linker.setName( linkerName );
 		
 		CrosslinkMasses masses = new CrosslinkMasses();
 		linker.setCrosslinkMasses( masses );
 		
-		CrosslinkMass xlinkMass = new CrosslinkMass();
-		linker.getCrosslinkMasses().getCrosslinkMass().add( xlinkMass );
-		
-		// set the mass for this crosslinker to the calculated mass for the crosslinker, as defined in the properties file
-		xlinkMass.setMass( NumberUtils.getRoundedBigDecimal( params.getLinker().getMonoCrosslinkMass() ) );
+		for( BigDecimal mass : kojakConfReader.getCrosslinkMasses() ) {
+			CrosslinkMass xlinkMass = new CrosslinkMass();
+			linker.getCrosslinkMasses().getCrosslinkMass().add( xlinkMass );
+			
+			// set the mass for this crosslinker to the calculated mass for the crosslinker, as defined in the properties file
+			xlinkMass.setMass( mass );
+		}
 		
 		//
 		// Define the static mods
@@ -135,18 +160,13 @@ public class XMLBuilder {
 		StaticModifications smods = new StaticModifications();
 		proxlInputRoot.setStaticModifications( smods );
 		
-		for( String modName : ModificationLookupUtils.getStaticModificationNames( params ) ) {
-			PLinkModification smod = ModificationLookupUtils.getPLinkModificationFromParameters( modName, params );
-			
-			// a single defined mod can affect multiple residue types, get them all added
-			for( String residue : smod.getResidues() ) {
+		for( String moddedResidue : kojakConfReader.getStaticModifications().keySet() ) {
 				
 				StaticModification xmlSmod = new StaticModification();
-				xmlSmod.setAminoAcid( residue );
-				xmlSmod.setMassChange( NumberUtils.getRoundedBigDecimal( smod.getMonoisotopicMass() ) );
+				xmlSmod.setAminoAcid( moddedResidue );
+				xmlSmod.setMassChange( kojakConfReader.getStaticModifications().get( moddedResidue ) );
 				
 				smods.getStaticModification().add( xmlSmod );
-			}
 		}
 		
 		//
@@ -159,14 +179,14 @@ public class XMLBuilder {
 			DecoyLabel xmlDecoyLabel = new DecoyLabel();
 			xmlDecoyLabels.getDecoyLabel().add( xmlDecoyLabel );
 			
-			xmlDecoyLabel.setPrefix( "random" );
+			xmlDecoyLabel.setPrefix( "RAND" );
 		}
 		
-		{
+		if( !analysis.getDecoyIdentifier().equals( "RAND" ) ) {
 			DecoyLabel xmlDecoyLabel = new DecoyLabel();
 			xmlDecoyLabels.getDecoyLabel().add( xmlDecoyLabel );
 			
-			xmlDecoyLabel.setPrefix( "decoy" );
+			xmlDecoyLabel.setPrefix( analysis.getDecoyIdentifier() );
 		}
 		
 		

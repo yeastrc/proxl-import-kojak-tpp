@@ -3,8 +3,11 @@ package org.yeastrc.proxl.xml.iprophet.utils;
 import java.util.regex.Pattern;
 
 import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
+import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
 
 import net.systemsbiology.regis_web.pepxml.AltProteinDataType;
+import net.systemsbiology.regis_web.pepxml.InterprophetSummary;
+import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.AnalysisSummary;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.Xlink.LinkedPeptide;
 
@@ -13,6 +16,28 @@ public class PepXMLUtils {
 	public static final String XLINK_TYPE_LOOPLINK = "loop";
 	public static final String XLINK_TYPE_CROSSLINK = "xl";
 	public static final String XLINK_TYPE_UNLINKED = "na";
+	
+	/**
+	 * Get the version number associated with this interprophet search
+	 * 
+	 * @param analysis
+	 * @return
+	 * @throws Exception
+	 */
+	public static String getVersion( IProphetAnalysis analysis ) throws Exception {
+		
+		String version = "Unknown";
+		
+		for( AnalysisSummary analysisSummary : analysis.getAnalysis().getAnalysisSummary() ) {
+			
+			try {
+				version = ((InterprophetSummary)(analysisSummary.getAny() )).getVersion();
+				break;
+			} catch (Exception e ) { ; }			
+		}
+		
+		return version;		
+	}
 	
 	/**
 	 * Check whether the searchHit is a decoy. For crosslinks, this is a decoy only if both linked peptides only
@@ -86,6 +111,7 @@ public class PepXMLUtils {
 		
 		return true;
 	}
+	
 	
 	private static boolean caseInsensitiveStringContains( String testString, String containingString ) {
 		return Pattern.compile(Pattern.quote(testString), Pattern.CASE_INSENSITIVE).matcher(containingString).find();

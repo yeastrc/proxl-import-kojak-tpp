@@ -17,6 +17,7 @@ public class PSMAnnotationTypes {
 	
 	// iProphet scores
 	public static final String IPROPHET_ANNOTATION_TYPE_SCORE = "Probability Score";
+	public static final String IPROPHET_ANNOTATION_TYPE_ERROR = "Error Rate (FDR)";
 	
 	// PeptideProphet scores
 	public static final String PPROPHET_ANNOTATION_TYPE_SCORE = "Probability Score";
@@ -32,6 +33,17 @@ public class PSMAnnotationTypes {
 			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
 			type.setName( IPROPHET_ANNOTATION_TYPE_SCORE );
 			type.setDescription( "InterProphet Probability Score" );
+			type.setFilterDirection( FilterDirectionType.ABOVE );
+			type.setDefaultFilter( false );
+
+			
+			types.add( type );
+		}
+		
+		{
+			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
+			type.setName( IPROPHET_ANNOTATION_TYPE_ERROR );
+			type.setDescription( "Error rate calculated from InterProphet probability scores." );
 			type.setDefaultFilterValue( new BigDecimal( "0.01" ) );
 			type.setDefaultFilter( true );
 			type.setFilterDirection( FilterDirectionType.ABOVE );
@@ -43,9 +55,9 @@ public class PSMAnnotationTypes {
 			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
 			type.setName( PPROPHET_ANNOTATION_TYPE_SCORE );
 			type.setDescription( "PeptideProphet Probability Score" );
-			type.setDefaultFilterValue( new BigDecimal( "0.99" ) );
-			type.setDefaultFilter( true );
 			type.setFilterDirection( FilterDirectionType.ABOVE );
+			type.setDefaultFilter( false );
+
 			
 			types.add( type );
 		}
@@ -73,7 +85,15 @@ public class PSMAnnotationTypes {
 		
 		{
 			DescriptivePsmAnnotationType type = new DescriptivePsmAnnotationType();
-			type.setName( IPROPHET_ANNOTATION_TYPE_SCORE );
+			type.setName( KOJAK_ANNOTATION_TYPE_DELTASCORE );
+			type.setDescription( type.getName() );
+			
+			types.add( type );
+		}
+		
+		{
+			DescriptivePsmAnnotationType type = new DescriptivePsmAnnotationType();
+			type.setName( KOJAK_ANNOTATION_TYPE_PPMERROR );
 			type.setDescription( type.getName() );
 			
 			types.add( type );

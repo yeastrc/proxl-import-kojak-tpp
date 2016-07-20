@@ -15,28 +15,20 @@ public class PSMDefaultVisibleAnnotationTypes {
 	public static List<SearchAnnotation> getDefaultVisibleAnnotationTypes() {
 		List<SearchAnnotation> annotations = new ArrayList<SearchAnnotation>();
 		
-		/*
+		
 		{
 			SearchAnnotation annotation = new SearchAnnotation();
-			annotation.setAnnotationName( PSMAnnotationTypes.ANNOTATION_TYPE_SCORE );
-			annotation.setSearchProgram( PLinkConstants.SEARCH_PROGRAM_NAME );
+			annotation.setAnnotationName( PSMAnnotationTypes.IPROPHET_ANNOTATION_TYPE_ERROR);
+			annotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
 			annotations.add( annotation );
 		}
 
 		{
 			SearchAnnotation annotation = new SearchAnnotation();
-			annotation.setAnnotationName( PSMAnnotationTypes.ANNOTATION_TYPE_CALC_MASS );
-			annotation.setSearchProgram( PLinkConstants.SEARCH_PROGRAM_NAME );
+			annotation.setAnnotationName( PSMAnnotationTypes.IPROPHET_ANNOTATION_TYPE_SCORE );
+			annotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
 			annotations.add( annotation );
 		}
-
-		{
-			SearchAnnotation annotation = new SearchAnnotation();
-			annotation.setAnnotationName( PSMAnnotationTypes.ANNOTATION_TYPE_DELTA_MASS );
-			annotation.setSearchProgram( PLinkConstants.SEARCH_PROGRAM_NAME );
-			annotations.add( annotation );
-		}
-		*/
 		
 		return annotations;
 	}
