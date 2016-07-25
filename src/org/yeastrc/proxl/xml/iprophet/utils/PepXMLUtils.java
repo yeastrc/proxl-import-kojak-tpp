@@ -1,5 +1,6 @@
 package org.yeastrc.proxl.xml.iprophet.utils;
 
+import java.util.Collection;
 import java.util.regex.Pattern;
 
 import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
@@ -16,6 +17,31 @@ public class PepXMLUtils {
 	public static final String XLINK_TYPE_LOOPLINK = "loop";
 	public static final String XLINK_TYPE_CROSSLINK = "xl";
 	public static final String XLINK_TYPE_UNLINKED = "na";
+	
+	/**
+	 * Get the type of link represented by the search hit
+	 * 
+	 * @param searchHit
+	 * @return
+	 * @throws Exception
+	 */
+	public static int getHitType( SearchHit searchHit ) throws Exception {
+		
+		if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_CROSSLINK ) ) {
+			return IProphetConstants.LINK_TYPE_CROSSLINK;
+		}
+		
+		if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_LOOPLINK ) ) {
+			return IProphetConstants.LINK_TYPE_LOOPLINK;
+		}
+		
+		if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_UNLINKED ) ) {
+			return IProphetConstants.LINK_TYPE_UNLINKED;
+		}
+		
+		throw new Exception( "Unknown link type in pepxml: " + searchHit.getXlinkType() );
+		
+	}
 	
 	/**
 	 * Get the version number associated with this interprophet search
@@ -37,6 +63,24 @@ public class PepXMLUtils {
 		}
 		
 		return version;		
+	}
+	
+	/**
+	 * Check whether the given searchHit is a decoy.
+	 * 
+	 * @param decoyStrings
+	 * @param searchHit
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean isDecoy( Collection<String> decoyStrings, SearchHit searchHit ) throws Exception {
+		
+		for( String decoyString : decoyStrings ) {
+			if( isDecoy( decoyString, searchHit ) )
+				return true;
+		}
+		
+		return false;
 	}
 	
 	/**

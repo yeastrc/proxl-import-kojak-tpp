@@ -32,7 +32,7 @@ public class PSMAnnotationTypes {
 		{
 			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
 			type.setName( IPROPHET_ANNOTATION_TYPE_SCORE );
-			type.setDescription( "InterProphet Probability Score" );
+			type.setDescription( "iProphet Probability Score" );
 			type.setFilterDirection( FilterDirectionType.ABOVE );
 			type.setDefaultFilter( false );
 
@@ -43,7 +43,7 @@ public class PSMAnnotationTypes {
 		{
 			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
 			type.setName( IPROPHET_ANNOTATION_TYPE_ERROR );
-			type.setDescription( "Error rate calculated from InterProphet probability scores." );
+			type.setDescription( "Error rate calculated from iProphet probability scores." );
 			type.setDefaultFilterValue( new BigDecimal( "0.01" ) );
 			type.setDefaultFilter( true );
 			type.setFilterDirection( FilterDirectionType.ABOVE );

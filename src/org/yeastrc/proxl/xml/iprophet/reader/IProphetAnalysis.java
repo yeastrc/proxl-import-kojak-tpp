@@ -1,6 +1,7 @@
 package org.yeastrc.proxl.xml.iprophet.reader;
 
 import java.io.File;
+import java.util.Collection;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
@@ -31,7 +32,7 @@ public class IProphetAnalysis {
 	
 	
 	private MsmsPipelineAnalysis analysis;
-	private String decoyIdentifier;
+	private Collection<String> decoyIdentifiers;
 	private String fastaDatabase;
 	
 	/**
@@ -47,16 +48,20 @@ public class IProphetAnalysis {
 		this.analysis = analysis;
 	}
 
-	/**
-	 * The string used to identify a decoy hit. If this string is present at all in the protein name, it is considered a decoy.
-	 * @return
-	 */
-	public String getDecoyIdentifier() {
-		return decoyIdentifier;
+	public Collection<String> getDecoyIdentifiers() {
+		return decoyIdentifiers;
 	}
 
-	public void setDecoyIdentifier(String decoyIdentifier) {
-		this.decoyIdentifier = decoyIdentifier;
+	public void setDecoyIdentifiers(Collection<String> decoyIdentifiers) {
+		this.decoyIdentifiers = decoyIdentifiers;
+	}
+
+	public String getFastaDatabase() {
+		return fastaDatabase;
+	}
+
+	public void setFastaDatabase(String fastaDatabase) {
+		this.fastaDatabase = fastaDatabase;
 	}
 
 	/**

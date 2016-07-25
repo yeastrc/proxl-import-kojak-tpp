@@ -76,7 +76,7 @@ public class IProphetErrorAnalyzer {
 								psc.setpCount( psc.getpCount() + score.doubleValue() );
 								psc.setOneMinusPCount( psc.getOneMinusPCount() + ( 1.0 - score.doubleValue() ) );
 								
-								boolean isDecoy = PepXMLUtils.isDecoy( analysis.getDecoyIdentifier(), searchHit );
+								boolean isDecoy = PepXMLUtils.isDecoy( analysis.getDecoyIdentifiers(), searchHit );
 								
 								TargetDecoyCounter tdc = null;
 								if( scoreCounts.containsKey( score ) )

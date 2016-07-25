@@ -5,6 +5,12 @@ import java.util.Map;
 
 public class KojakConstants {
 
+	public static final String NAME_KOJAK_SCORE = "kojak_score";
+	public static final String NAME_DELTA_SCORE = "delta_score";
+	public static final String NAME_PPM_ERROR = "ppm_error";
+	
+	
+	
 	/**
 	 * A map of amino acid single letter codes to masses used by Kojak, as found in
 	 * https://github.com/mhoopmann/kojak/blob/master/KIons.cpp

@@ -7,6 +7,7 @@ import jargs.gnu.CmdLineParser.UnknownOptionException;
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.HashSet;
 
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetErrorAnalyzer;
@@ -26,7 +27,13 @@ public class MainProgram {
 	public void convertSearch( String pepXMLFile ) throws Exception {
 		
 		IProphetAnalysis analysis = IProphetAnalysis.loadAnalysis( testPepXMLFile );
-		analysis.setDecoyIdentifier( "rand" );
+		
+		Collection<String> decoyIdentifiers = new HashSet<>();
+		decoyIdentifiers.add( "random" );
+		decoyIdentifiers.add( "rand0" );
+		decoyIdentifiers.add( "rand1" );
+		
+		analysis.setDecoyIdentifiers( decoyIdentifiers );
 		
 		IProphetErrorAnalyzer analyzer = IProphetErrorAnalyzer.getInstance( analysis );
 		analyzer.performAnalysis();
