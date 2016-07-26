@@ -9,8 +9,10 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashSet;
 
+import org.yeastrc.proxl.xml.iprophet.builder.XMLBuilder;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetErrorAnalyzer;
+import org.yeastrc.proxl.xml.iprophet.reader.KojakConfReader;
 import org.yeastrc.proxl.xml.iprophet.utils.ScanParsingUtils;
 
 
@@ -23,6 +25,9 @@ import org.yeastrc.proxl.xml.iprophet.utils.ScanParsingUtils;
 public class MainProgram {
 
 	private static String testPepXMLFile = "C:\\Users\\mriffle\\Desktop\\interact-RJAZ205_XLSecondScoreFrac.ipro.pep.xml";
+	private static String testFastaFile = "C:\\Users\\mriffle\\Desktop\\RJAZ200-RJAZ211_3pepCnt_plusRev_RAND.fasta";
+	private static String testKojakConfFile = "C:\\Users\\mriffle\\Desktop\\Kojak-1.4.2-QEP2_2016_0121_RJ_69_205_xlink05.conf";
+	private static String outFile = "C:\\Users\\mriffle\\Desktop\\test.proxl.xml";
 	
 	public void convertSearch( String pepXMLFile ) throws Exception {
 		
@@ -35,10 +40,8 @@ public class MainProgram {
 		
 		analysis.setDecoyIdentifiers( decoyIdentifiers );
 		
-		IProphetErrorAnalyzer analyzer = IProphetErrorAnalyzer.getInstance( analysis );
-		analyzer.performAnalysis();
-		
-		
+		XMLBuilder builder = new XMLBuilder();
+		builder.buildAndSaveXML(analysis, new File( outFile ), "edc", KojakConfReader.getInstance( testKojakConfFile), new File( testFastaFile ) );		
 	}
 	
 	public static void main( String[] args ) throws Exception {

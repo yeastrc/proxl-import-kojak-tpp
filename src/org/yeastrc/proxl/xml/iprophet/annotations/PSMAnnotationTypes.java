@@ -46,7 +46,7 @@ public class PSMAnnotationTypes {
 			type.setDescription( "Error rate calculated from iProphet probability scores." );
 			type.setDefaultFilterValue( new BigDecimal( "0.01" ) );
 			type.setDefaultFilter( true );
-			type.setFilterDirection( FilterDirectionType.ABOVE );
+			type.setFilterDirection( FilterDirectionType.BELOW );
 			
 			types.add( type );
 		}

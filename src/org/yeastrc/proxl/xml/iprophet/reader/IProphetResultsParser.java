@@ -82,7 +82,7 @@ public class IProphetResultsParser {
 			}
 		}
 		
-		return null;
+		return results;
 	}
 	
 	/**
@@ -114,6 +114,9 @@ public class IProphetResultsParser {
 	 */
 	private IProphetReportedPeptide getCrosslinkReportedPeptide( SearchHit searchHit ) throws Exception {
 		
+		System.out.println( searchHit.getPeptide() );
+		System.out.println( "\t" + searchHit.getXlinkType() );
+		
 		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
 		reportedPeptide.setType( IProphetConstants.LINK_TYPE_CROSSLINK );
 				
@@ -128,11 +131,19 @@ public class IProphetResultsParser {
 				throw new Exception( "Got more than two linked peptides." );
 			}
 			
+			
+			System.out.println( "\t\t" + linkedPeptide.getPeptide() );
+			System.out.println( "\t\tpeptide num: " + peptideNumber );
+			
 			IProphetPeptide peptide = getPeptideFromLinkedPeptide( linkedPeptide );
 			int position = 0;
 			
-			for( NameValueType nvt : searchHit.getXlink().getXlinkScore() ) {
+			for( NameValueType nvt : linkedPeptide.getXlinkScore() ) {
+								
 				if( nvt.getName().equals( "link" ) ) {
+					
+					System.out.println( "\t\t" + nvt.getValueAttribute() );
+					
 					if( position == 0 )
 						position = Integer.valueOf( nvt.getValueAttribute() );
 					else
@@ -165,6 +176,10 @@ public class IProphetResultsParser {
 	 */
 	private IProphetReportedPeptide getLooplinkReportedPeptide( SearchHit searchHit ) throws Exception {
 		
+		System.out.println( searchHit.getPeptide() );
+		System.out.println( "\t" + searchHit.getXlinkType() );
+
+		
 		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
 		
 		reportedPeptide.setPeptide1( getPeptideFromSearchHit( searchHit ) );
@@ -175,6 +190,9 @@ public class IProphetResultsParser {
 		
 		for( NameValueType nvt : xl.getXlinkScore() ) {
 			if( nvt.getName().equals( "link" ) ) {
+				
+				System.out.println( "\t\t" + nvt.getValueAttribute() );
+				
 				if( reportedPeptide.getPosition1() == 0 )
 					reportedPeptide.setPosition1( Integer.valueOf( nvt.getValueAttribute() ) );
 				else if( reportedPeptide.getPosition2() == 0 )
@@ -182,10 +200,10 @@ public class IProphetResultsParser {
 				else
 					throw new Exception( "Got more than 2 linked positions for looplink." );
 			}
-			
-			if( reportedPeptide.getPosition1() == 0 || reportedPeptide.getPosition2() == 0 )
-				throw new Exception( "Did not get two positions for looplink." );
 		}
+		
+		if( reportedPeptide.getPosition1() == 0 || reportedPeptide.getPosition2() == 0 )
+			throw new Exception( "Did not get two positions for looplink." );
 		
 		return reportedPeptide;
 	}
@@ -227,7 +245,7 @@ public class IProphetResultsParser {
 			for( ModAminoacidMass mam : modInfo.getModAminoacidMass() ) {
 				
 				int position = mam.getPosition().intValue();
-				String residue = peptide.getSequence().substring( position + 1, position + 2 );
+				String residue = peptide.getSequence().substring( position - 1, position );
 				
 				double massDifferenceDouble = mam.getMass() - KojakConstants.AA_MASS.get( residue );
 				BigDecimal massDifference = BigDecimal.valueOf( massDifferenceDouble );
@@ -266,7 +284,7 @@ public class IProphetResultsParser {
 			for( ModAminoacidMass mam : modInfo.getModAminoacidMass() ) {
 				
 				int position = mam.getPosition().intValue();
-				String residue = peptide.getSequence().substring( position + 1, position + 2 );
+				String residue = peptide.getSequence().substring( position - 1, position );
 				
 				double massDifferenceDouble = mam.getMass() - KojakConstants.AA_MASS.get( residue );
 				BigDecimal massDifference = BigDecimal.valueOf( massDifferenceDouble );
@@ -298,7 +316,7 @@ public class IProphetResultsParser {
 		IProphetResult result = new IProphetResult();
 		
 		result.setScanFile( ScanParsingUtils.getFilenameFromReportedScan( spectrumQuery.getSpectrum() ) );
-		result.setScanNumber( ScanParsingUtils.getChargeFromReportedScan( spectrumQuery.getSpectrum() ) );
+		result.setScanNumber( (int)spectrumQuery.getStartScan() );
 		result.setCharge( spectrumQuery.getAssumedCharge().intValue() );
 		
 		// if this is a crosslink or looplink, get the mass of the linker

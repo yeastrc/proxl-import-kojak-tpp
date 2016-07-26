@@ -5,10 +5,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.yeastrc.fasta.FASTAEntry;
@@ -126,9 +123,9 @@ public class XMLBuilder {
 		searchProgram = new SearchProgram();
 		searchPrograms.getSearchProgram().add( searchProgram );
 		
-		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET );
-		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET  );
-		searchProgram.setVersion( PepXMLUtils.getVersion( analysis ) );
+		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
+		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK  );
+		searchProgram.setVersion( "Unknown" );
 		
 		
 		//
@@ -336,6 +333,7 @@ public class XMLBuilder {
 				
 				xmlPsm.setScanNumber( new BigInteger( String.valueOf( result.getScanNumber() ) ) );
 				xmlPsm.setPrecursorCharge( new BigInteger( String.valueOf( result.getCharge() ) ) );
+				xmlPsm.setScanFileName( result.getScanFile() );
 				
 				if( rp.getType() == IProphetConstants.LINK_TYPE_CROSSLINK || rp.getType() == IProphetConstants.LINK_TYPE_LOOPLINK )
 					xmlPsm.setLinkerMass( result.getLinkerMass() );
@@ -498,7 +496,11 @@ public class XMLBuilder {
             			xmlProteinAnnotation.setDescription( header.getDescription() );
             		
             		xmlProteinAnnotation.setName( header.getName() );
-            		xmlProteinAnnotation.setNcbiTaxonomyId( BigInteger.valueOf( GetTaxonomyId.getInstance().getTaxonomyId( header.getName(), header.getDescription() ) ) );
+            		
+            		Integer taxId = GetTaxonomyId.getInstance().getTaxonomyId( header.getName(), header.getDescription() );
+            		
+            		if( taxId != null )
+            			xmlProteinAnnotation.setNcbiTaxonomyId( BigInteger.valueOf( taxId ) );
             	}
             }
            
