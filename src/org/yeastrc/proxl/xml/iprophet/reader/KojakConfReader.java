@@ -83,6 +83,14 @@ public class KojakConfReader {
 		return staticModifications;
 	}
 
+	
+	
+	public File getFile() {
+		return file;
+	}
+
+
+
 	private File file;
 	private Collection<BigDecimal> monolinkMasses;
 	private Collection<BigDecimal> crosslinkMasses;

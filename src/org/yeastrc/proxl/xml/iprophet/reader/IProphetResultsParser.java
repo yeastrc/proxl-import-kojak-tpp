@@ -1,8 +1,10 @@
 package org.yeastrc.proxl.xml.iprophet.reader;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import net.systemsbiology.regis_web.pepxml.InterprophetResult;
@@ -13,6 +15,8 @@ import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.S
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.AnalysisResult;
+import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.Xlink;
+import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.Xlink.LinkedPeptide;
 import net.systemsbiology.regis_web.pepxml.NameValueType;
 import net.systemsbiology.regis_web.pepxml.PeptideprophetResult;
 
@@ -49,7 +53,9 @@ public class IProphetResultsParser {
 					for( SearchHit searchHit : searchResult.getSearchHit() ) {
 						for( AnalysisResult analysisResult : searchHit.getAnalysisResult() ) {
 							if( analysisResult.getAnalysis().equals( "interprophet" ) ) {
-								InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny();
+								
+								// only one interprophet result will appear for a search hit, and we are only
+								// interested in search hits with an interprophet result.
 								
 								// skip this if it's a decoy
 								if( PepXMLUtils.isDecoy( analysis.getDecoyIdentifiers(), searchHit) )
@@ -65,8 +71,10 @@ public class IProphetResultsParser {
 								// get our reported peptide
 								IProphetReportedPeptide reportedPeptide = getReportedPeptide( searchHit );
 								
+								if( !results.containsKey( reportedPeptide ) )
+									results.put( reportedPeptide, new ArrayList<IProphetResult>() );
 								
-								
+								results.get( reportedPeptide ).add( result );								
 							}
 						}
 					}
@@ -77,10 +85,16 @@ public class IProphetResultsParser {
 		return null;
 	}
 	
-	
+	/**
+	 * Get the IProphetReportedPeptide for the given SearchHit
+	 * 
+	 * @param searchHit
+	 * @return
+	 * @throws Exception
+	 */
 	private IProphetReportedPeptide getReportedPeptide( SearchHit searchHit ) throws Exception {
 		
-		int type = IProphetConstants.LINK_TYPE_CROSSLINK;
+		int type = PepXMLUtils.getHitType( searchHit );
 		
 		if( type == IProphetConstants.LINK_TYPE_CROSSLINK )
 			return getCrosslinkReportedPeptide( searchHit );
@@ -92,20 +106,104 @@ public class IProphetResultsParser {
 		
 	}
 
-	
+	/**
+	 * Get the IProphetReportedPeptide for a crosslink result
+	 * @param searchHit
+	 * @return
+	 * @throws Exception
+	 */
 	private IProphetReportedPeptide getCrosslinkReportedPeptide( SearchHit searchHit ) throws Exception {
 		
-		return null;
+		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
+		reportedPeptide.setType( IProphetConstants.LINK_TYPE_CROSSLINK );
+				
+		for( LinkedPeptide linkedPeptide : searchHit.getXlink().getLinkedPeptide() ) {
+			
+			int peptideNumber = 0;
+			if( reportedPeptide.getPeptide1() == null ) {
+				peptideNumber = 1;
+			} else if( reportedPeptide.getPeptide2() == null ) {
+				peptideNumber = 2;
+			} else {
+				throw new Exception( "Got more than two linked peptides." );
+			}
+			
+			IProphetPeptide peptide = getPeptideFromLinkedPeptide( linkedPeptide );
+			int position = 0;
+			
+			for( NameValueType nvt : searchHit.getXlink().getXlinkScore() ) {
+				if( nvt.getName().equals( "link" ) ) {
+					if( position == 0 )
+						position = Integer.valueOf( nvt.getValueAttribute() );
+					else
+						throw new Exception( "Got more than one linked position in peptide." );
+				}
+			}
+			
+			if( position == 0 )
+				throw new Exception( "Could not find linked position in peptide." );
+			
+			
+			if( peptideNumber == 1 ) {
+				reportedPeptide.setPeptide1( peptide );
+				reportedPeptide.setPosition1( position );
+			} else {
+				reportedPeptide.setPeptide2( peptide );
+				reportedPeptide.setPosition2( position );
+			}
+			
+		}
+		
+		return reportedPeptide;
 	}
 	
+	/**
+	 * Get the IProphetReportedPeptide for a looplink result
+	 * @param searchHit
+	 * @return
+	 * @throws Exception
+	 */
 	private IProphetReportedPeptide getLooplinkReportedPeptide( SearchHit searchHit ) throws Exception {
 		
-		return null;
+		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
+		
+		reportedPeptide.setPeptide1( getPeptideFromSearchHit( searchHit ) );
+		reportedPeptide.setType( IProphetConstants.LINK_TYPE_LOOPLINK );
+		
+		// add in the linked positions
+		Xlink xl = searchHit.getXlink();
+		
+		for( NameValueType nvt : xl.getXlinkScore() ) {
+			if( nvt.getName().equals( "link" ) ) {
+				if( reportedPeptide.getPosition1() == 0 )
+					reportedPeptide.setPosition1( Integer.valueOf( nvt.getValueAttribute() ) );
+				else if( reportedPeptide.getPosition2() == 0 )
+					reportedPeptide.setPosition2( Integer.valueOf( nvt.getValueAttribute() ) );
+				else
+					throw new Exception( "Got more than 2 linked positions for looplink." );
+			}
+			
+			if( reportedPeptide.getPosition1() == 0 || reportedPeptide.getPosition2() == 0 )
+				throw new Exception( "Did not get two positions for looplink." );
+		}
+		
+		return reportedPeptide;
 	}
-	
+
+	/**
+	 * Get the IProphetReportedPeptide for an unlinked result
+	 * @param searchHit
+	 * @return
+	 * @throws Exception
+	 */
 	private IProphetReportedPeptide getUnlinkedReportedPeptide( SearchHit searchHit ) throws Exception {
 		
-		return null;
+		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
+		
+		reportedPeptide.setPeptide1( getPeptideFromSearchHit( searchHit ) );
+		reportedPeptide.setType( IProphetConstants.LINK_TYPE_UNLINKED );
+		
+		return reportedPeptide;
 	}
 	
 	/**
@@ -131,17 +229,61 @@ public class IProphetResultsParser {
 				int position = mam.getPosition().intValue();
 				String residue = peptide.getSequence().substring( position + 1, position + 2 );
 				
-				double massDifferenceDouble = KojakConstants.AA_MASS.get( residue ) - mam.getMass();
+				double massDifferenceDouble = mam.getMass() - KojakConstants.AA_MASS.get( residue );
+				BigDecimal massDifference = BigDecimal.valueOf( massDifferenceDouble );
+				massDifference = massDifference.setScale( 6, BigDecimal.ROUND_HALF_UP );
 				
+				if( !mods.containsKey( position ) )
+					mods.put( position, new HashSet<BigDecimal>() );
 				
+				mods.get( position ).add( massDifference );				
 			}
 			
+			peptide.setModifications( mods );			
 		}
-		
-		
-		
-		return null;
+				
+		return peptide;
 	}
+	
+	/**
+	 * Get the IProphetPeptide from the searchHit. Includes the peptide sequence and any mods.
+	 * 
+	 * @param searchHit
+	 * @return
+	 * @throws Exception
+	 */
+	private IProphetPeptide getPeptideFromLinkedPeptide( LinkedPeptide linkedPeptide ) throws Exception {
+		
+		IProphetPeptide peptide = new IProphetPeptide();
+		
+		peptide.setSequence( linkedPeptide.getPeptide() );
+		
+		ModInfoDataType modInfo = linkedPeptide.getModificationInfo();
+		
+		if( modInfo!= null && modInfo.getModAminoacidMass() != null && modInfo.getModAminoacidMass().size() > 0 ) {
+			Map<Integer, Collection<BigDecimal>> mods = new HashMap<>();
+			
+			for( ModAminoacidMass mam : modInfo.getModAminoacidMass() ) {
+				
+				int position = mam.getPosition().intValue();
+				String residue = peptide.getSequence().substring( position + 1, position + 2 );
+				
+				double massDifferenceDouble = mam.getMass() - KojakConstants.AA_MASS.get( residue );
+				BigDecimal massDifference = BigDecimal.valueOf( massDifferenceDouble );
+				massDifference = massDifference.setScale( 6, BigDecimal.ROUND_HALF_UP );
+				
+				if( !mods.containsKey( position ) )
+					mods.put( position, new HashSet<BigDecimal>() );
+				
+				mods.get( position ).add( massDifference );				
+			}
+			
+			peptide.setModifications( mods );			
+		}
+				
+		return peptide;
+	}
+	
 	
 	/**
 	 * Get the PSM result for the given spectrum query and search hit.
@@ -157,6 +299,14 @@ public class IProphetResultsParser {
 		
 		result.setScanFile( ScanParsingUtils.getFilenameFromReportedScan( spectrumQuery.getSpectrum() ) );
 		result.setScanNumber( ScanParsingUtils.getChargeFromReportedScan( spectrumQuery.getSpectrum() ) );
+		result.setCharge( spectrumQuery.getAssumedCharge().intValue() );
+		
+		// if this is a crosslink or looplink, get the mass of the linker
+		int type = PepXMLUtils.getHitType( searchHit );
+		if( type == IProphetConstants.LINK_TYPE_CROSSLINK || type == IProphetConstants.LINK_TYPE_LOOPLINK ) {
+			Xlink xl = searchHit.getXlink();
+			result.setLinkerMass( xl.getMass() );
+		}
 		
 		// get the kojak scores
 		for( NameValueType score : searchHit.getSearchScore() ) {

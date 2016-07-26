@@ -12,7 +12,7 @@ public class IProphetResult {
 	private BigDecimal ppmError;
 	private BigDecimal interProphetScore;
 	private BigDecimal peptideProphetScore;
-
+	private BigDecimal linkerMass;
 	
 	public String getScanFile() {
 		return scanFile;
@@ -55,6 +55,18 @@ public class IProphetResult {
 	}
 	public void setPeptideProphetScore(BigDecimal peptideProphetScore) {
 		this.peptideProphetScore = peptideProphetScore;
+	}
+	public int getCharge() {
+		return charge;
+	}
+	public void setCharge(int charge) {
+		this.charge = charge;
+	}
+	public BigDecimal getLinkerMass() {
+		return linkerMass;
+	}
+	public void setLinkerMass(BigDecimal linkerMass) {
+		this.linkerMass = linkerMass;
 	}
 	
 	
