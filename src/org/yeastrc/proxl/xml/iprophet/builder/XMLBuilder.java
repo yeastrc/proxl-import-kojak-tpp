@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 
 import org.yeastrc.fasta.FASTAEntry;
@@ -20,7 +21,6 @@ import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetErrorAnalyzer;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetProteinNameCollector;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetResultsParser;
-import org.yeastrc.proxl.xml.iprophet.reader.KojakConfReader;
 import org.yeastrc.proxl.xml.iprophet.utils.ModUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
 import org.yeastrc.proxl_import.api.xml_dto.ConfigurationFile;
@@ -84,7 +84,6 @@ public class XMLBuilder {
 								 IProphetAnalysis analysis,
 			                     File outfile,
 			                     String linkerName,
-			                     KojakConfReader kojakConfReader,
 			                     File fastaFile
 			                    ) throws Exception {
 
@@ -111,36 +110,15 @@ public class XMLBuilder {
 		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
 		searchProgram.setVersion( PepXMLUtils.getVersion( analysis ) );
 
-		// add peptideprophet
-		searchProgram = new SearchProgram();
-		searchPrograms.getSearchProgram().add( searchProgram );
-		
-		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET );
-		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET  );
-		searchProgram.setVersion( PepXMLUtils.getVersion( analysis ) );
-		
-		// add kojak
-		searchProgram = new SearchProgram();
-		searchPrograms.getSearchProgram().add( searchProgram );
-		
-		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
-		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK  );
-		searchProgram.setVersion( "Unknown" );
-		
-		
-		//
-		// Define the annotation types present in the data
-		//
-		PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
-		searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
-		
-		FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
-		psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
-		filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll( PSMAnnotationTypes.getFilterablePsmAnnotationTypes() );
-		
-		DescriptivePsmAnnotationTypes descriptivePsmAnnotationTypes = new DescriptivePsmAnnotationTypes();
-		psmAnnotationTypes.setDescriptivePsmAnnotationTypes( descriptivePsmAnnotationTypes );
-		descriptivePsmAnnotationTypes.getDescriptivePsmAnnotationType().addAll( PSMAnnotationTypes.getDescriptivePsmAnnotationTypes() );
+		{
+			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
+			searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
+			
+			FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
+			psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
+			filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll( PSMAnnotationTypes.getFilterablePsmAnnotationTypes( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET ) );
+			
+		}
 		
 		//
 		// Define which annotation types are visible by default
@@ -152,6 +130,48 @@ public class XMLBuilder {
 		xmlDefaultVisibleAnnotations.setVisiblePsmAnnotations( xmlVisiblePsmAnnotations );
 
 		xmlVisiblePsmAnnotations.getSearchAnnotation().addAll( PSMDefaultVisibleAnnotationTypes.getDefaultVisibleAnnotationTypes() );
+		
+		
+		// add peptideprophet
+		searchProgram = new SearchProgram();
+		searchPrograms.getSearchProgram().add( searchProgram );
+		
+		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET );
+		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET  );
+		searchProgram.setVersion( PepXMLUtils.getVersion( analysis ) );
+		
+		{
+			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
+			searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
+			
+			FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
+			psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
+			filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll( PSMAnnotationTypes.getFilterablePsmAnnotationTypes( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET ) );
+			
+		}
+		
+		
+		// add kojak
+		searchProgram = new SearchProgram();
+		searchPrograms.getSearchProgram().add( searchProgram );
+		
+		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
+		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK  );
+		searchProgram.setVersion( "Unknown" );
+		
+		{
+			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
+			searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
+			
+			FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
+			psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
+			filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll( PSMAnnotationTypes.getFilterablePsmAnnotationTypes( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK ) );
+			
+			DescriptivePsmAnnotationTypes descriptivePsmAnnotationTypes = new DescriptivePsmAnnotationTypes();
+			psmAnnotationTypes.setDescriptivePsmAnnotationTypes( descriptivePsmAnnotationTypes );
+			descriptivePsmAnnotationTypes.getDescriptivePsmAnnotationType().addAll( PSMAnnotationTypes.getDescriptivePsmAnnotationTypes( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK ) );
+		}
+		
 		
 		//
 		// Define the linker information
@@ -167,7 +187,7 @@ public class XMLBuilder {
 		CrosslinkMasses masses = new CrosslinkMasses();
 		linker.setCrosslinkMasses( masses );
 		
-		for( BigDecimal mass : kojakConfReader.getCrosslinkMasses() ) {
+		for( BigDecimal mass : analysis.getKojakConfReader().getCrosslinkMasses() ) {
 			CrosslinkMass xlinkMass = new CrosslinkMass();
 			linker.getCrosslinkMasses().getCrosslinkMass().add( xlinkMass );
 			
@@ -181,11 +201,11 @@ public class XMLBuilder {
 		StaticModifications smods = new StaticModifications();
 		proxlInputRoot.setStaticModifications( smods );
 		
-		for( String moddedResidue : kojakConfReader.getStaticModifications().keySet() ) {
+		for( String moddedResidue : analysis.getKojakConfReader().getStaticModifications().keySet() ) {
 				
 				StaticModification xmlSmod = new StaticModification();
 				xmlSmod.setAminoAcid( moddedResidue );
-				xmlSmod.setMassChange( kojakConfReader.getStaticModifications().get( moddedResidue ) );
+				xmlSmod.setMassChange( analysis.getKojakConfReader().getStaticModifications().get( moddedResidue ) );
 				
 				smods.getStaticModification().add( xmlSmod );
 		}
@@ -214,8 +234,16 @@ public class XMLBuilder {
 		Map<IProphetReportedPeptide, Collection<IProphetResult>> resultsByReportedPeptide = 
 				IProphetResultsParser.getInstance().getResultsFromAnalysis( analysis );
 		
+		// create a unique set of peptides found, to ensure each one is found in at least 
+		// one of the reported proteins
+		Collection<String> peptides = new HashSet<>();
+		
+		
 		// iterate over each distinct reported peptide
 		for( IProphetReportedPeptide rp : resultsByReportedPeptide.keySet() ) {
+			
+			peptides.add( rp.getPeptide1().getSequence() );
+			if( rp.getPeptide2() != null ) peptides.add( rp.getPeptide2().getSequence() );
 			
 			ReportedPeptide xmlReportedPeptide = new ReportedPeptide();
 			reportedPeptides.getReportedPeptide().add( xmlReportedPeptide );
@@ -253,7 +281,7 @@ public class XMLBuilder {
 							
 							xmlModification.setMass( modMass );
 							xmlModification.setPosition( new BigInteger( String.valueOf( position ) ) );
-							xmlModification.setIsMonolink( ModUtils.isMonolink( modMass, kojakConfReader ) );
+							xmlModification.setIsMonolink( ModUtils.isMonolink( modMass, analysis.getKojakConfReader() ) );
 							
 						}
 					}
@@ -297,13 +325,13 @@ public class XMLBuilder {
 					
 					for( int position : rp.getPeptide2().getModifications().keySet() ) {
 						for( BigDecimal modMass : rp.getPeptide2().getModifications().get( position ) ) {
-
+							
 							Modification xmlModification = new Modification();
 							xmlModifications.getModification().add( xmlModification );
 							
 							xmlModification.setMass( modMass );
 							xmlModification.setPosition( new BigInteger( String.valueOf( position ) ) );
-							xmlModification.setIsMonolink( ModUtils.isMonolink( modMass, kojakConfReader ) );
+							xmlModification.setIsMonolink( ModUtils.isMonolink( modMass, analysis.getKojakConfReader() ) );
 							
 						}
 					}
@@ -421,7 +449,7 @@ public class XMLBuilder {
 		
 		// gather up the names of all referenced proteins
 		Collection<String> proteinNames = IProphetProteinNameCollector.getInstance().getProteinNames( analysis );
-		this.buildMatchedProteinsElement( proxlInputRoot, proteinNames, fastaFile );
+		this.buildMatchedProteinsElement( proxlInputRoot, proteinNames, peptides, fastaFile );
 		
 		
 		
@@ -435,8 +463,8 @@ public class XMLBuilder {
 		xmlConfigurationFiles.getConfigurationFile().add( xmlConfigurationFile );
 		
 		xmlConfigurationFile.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
-		xmlConfigurationFile.setFileName( kojakConfReader.getFile().getName() );
-		xmlConfigurationFile.setFileContent( Files.readAllBytes( FileSystems.getDefault().getPath( kojakConfReader.getFile().getAbsolutePath() ) ) );
+		xmlConfigurationFile.setFileName( analysis.getKojakConfReader().getFile().getName() );
+		xmlConfigurationFile.setFileContent( Files.readAllBytes( FileSystems.getDefault().getPath( analysis.getKojakConfReader().getFile().getAbsolutePath() ) ) );
 		
 		
 		//make the xml file
@@ -450,10 +478,13 @@ public class XMLBuilder {
 	 * 
 	 * @param proxlInput
 	 * @param proteinNames
+	 * @param peptides
 	 * @param fastaFile
 	 * @throws Exception
 	 */
-	private void buildMatchedProteinsElement( ProxlInput proxlInput, Collection<String> proteinNames, File fastaFile ) throws Exception {
+	private void buildMatchedProteinsElement( ProxlInput proxlInput, Collection<String> proteinNames, Collection<String> peptides, File fastaFile ) throws Exception {
+		
+		Collection<String> sequences = new HashSet<>();
 		
 		MatchedProteins xmlMatchedProteins = new MatchedProteins();
 		proxlInput.setMatchedProteins( xmlMatchedProteins );
@@ -486,6 +517,7 @@ public class XMLBuilder {
             	xmlMatchedProteins.getProtein().add( xmlProtein );
             	
             	xmlProtein.setSequence( entry.getSequence() );
+            	sequences.add( entry.getSequence() );
             	
             	for( FASTAHeader header : entry.getHeaders() ) {
             		
@@ -507,6 +539,20 @@ public class XMLBuilder {
 
             // get the next entry in the FASTA file
             entry = reader.readNext();
+        }
+        
+        // ensure each peptides if found in at least one of the matched peptides' sequences
+        for( String peptide : peptides ) {
+        	boolean found = false;
+        	for( String protein : sequences ) {
+        		if( protein.toLowerCase().contains( peptide.toLowerCase() ) ) {
+        			found = true;
+        			break;
+        		}
+        	}
+        	
+        	if( !found )
+        		throw new Exception( "Could not find peptide sequence (" + peptide + ") in any matched protein..." );
         }
 
 	}

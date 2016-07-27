@@ -34,6 +34,7 @@ public class IProphetAnalysis {
 	private MsmsPipelineAnalysis analysis;
 	private Collection<String> decoyIdentifiers;
 	private String fastaDatabase;
+	private KojakConfReader kojakConfReader;
 	
 	/**
 	 * Get the root element of the pepXML file as a JAXB object
@@ -62,6 +63,16 @@ public class IProphetAnalysis {
 
 	public void setFastaDatabase(String fastaDatabase) {
 		this.fastaDatabase = fastaDatabase;
+	}
+	
+	
+
+	public KojakConfReader getKojakConfReader() {
+		return kojakConfReader;
+	}
+
+	public void setKojakConfReader(KojakConfReader kojakConfReader) {
+		this.kojakConfReader = kojakConfReader;
 	}
 
 	/**

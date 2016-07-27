@@ -14,7 +14,7 @@ public class IProphetPeptide {
 
 	/**
 	 * Get the string representation of this peptide that includes mods, in the form of:
-	 * PEP[12.2932,15.993]TI[12.2932]DE
+	 * PEP[12.29,15.99]TI[12.2932]DE
 	 */
 	public String toString() {
 		
@@ -29,7 +29,7 @@ public class IProphetPeptide {
 				
 				if( this.getModifications().get( i ) != null ) {
 					for( BigDecimal mod : this.getModifications().get( i ) ) {
-						modsAtPosition.add( mod.toString() );
+						modsAtPosition.add( mod.setScale( 2, BigDecimal.ROUND_HALF_UP ).toString() );
 					}
 					
 					if( modsAtPosition.size() > 0 ) {

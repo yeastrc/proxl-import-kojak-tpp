@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import net.systemsbiology.regis_web.pepxml.AltProteinDataType;
 import net.systemsbiology.regis_web.pepxml.InterprophetResult;
 import net.systemsbiology.regis_web.pepxml.ModInfoDataType;
 import net.systemsbiology.regis_web.pepxml.ModInfoDataType.ModAminoacidMass;
@@ -25,6 +26,7 @@ import org.yeastrc.proxl.xml.iprophet.constants.KojakConstants;
 import org.yeastrc.proxl.xml.iprophet.objects.IProphetPeptide;
 import org.yeastrc.proxl.xml.iprophet.objects.IProphetReportedPeptide;
 import org.yeastrc.proxl.xml.iprophet.objects.IProphetResult;
+import org.yeastrc.proxl.xml.iprophet.utils.ModUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.ScanParsingUtils;
 
@@ -57,6 +59,23 @@ public class IProphetResultsParser {
 								// only one interprophet result will appear for a search hit, and we are only
 								// interested in search hits with an interprophet result.
 								
+								String sequence = searchHit.getPeptide();
+								if( sequence.equals( "RIDLAGR" ) ) {
+									
+									String hitSummary = "";
+									
+									hitSummary += "peptide: " + searchHit.getPeptide() + "\n";
+									hitSummary += "protein: " + searchHit.getProtein() + "\n";
+									
+									if( searchHit.getAlternativeProtein() != null ) {
+										for( AltProteinDataType altProtein : searchHit.getAlternativeProtein() ) {
+											hitSummary += "alt protein: " + altProtein.getProtein() + "\n";
+										}
+									}
+									
+									throw new Exception( "Decoy status is: " + PepXMLUtils.isDecoy( analysis.getDecoyIdentifiers(), searchHit) + " for\n" + hitSummary );
+								}
+								
 								// skip this if it's a decoy
 								if( PepXMLUtils.isDecoy( analysis.getDecoyIdentifiers(), searchHit) )
 									continue;
@@ -65,11 +84,11 @@ public class IProphetResultsParser {
 								IProphetResult result = getResult( spectrumQuery, searchHit );
 								
 								// skip if the probability is 0 (another way to check for decoys)
-								if( result.getInterProphetScore().equals( new BigDecimal( "0" ) ) )
+								if( result.getInterProphetScore().compareTo( new BigDecimal( "0" ) ) == 0  )
 									continue;
 								
 								// get our reported peptide
-								IProphetReportedPeptide reportedPeptide = getReportedPeptide( searchHit );
+								IProphetReportedPeptide reportedPeptide = getReportedPeptide( searchHit, analysis );
 								
 								if( !results.containsKey( reportedPeptide ) )
 									results.put( reportedPeptide, new ArrayList<IProphetResult>() );
@@ -92,17 +111,17 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetReportedPeptide getReportedPeptide( SearchHit searchHit ) throws Exception {
+	private IProphetReportedPeptide getReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
 		
 		int type = PepXMLUtils.getHitType( searchHit );
 		
 		if( type == IProphetConstants.LINK_TYPE_CROSSLINK )
-			return getCrosslinkReportedPeptide( searchHit );
+			return getCrosslinkReportedPeptide( searchHit, analysis );
 		
 		if( type == IProphetConstants.LINK_TYPE_LOOPLINK )
-			return getLooplinkReportedPeptide( searchHit );
+			return getLooplinkReportedPeptide( searchHit, analysis );
 		
-		return getUnlinkedReportedPeptide( searchHit );
+		return getUnlinkedReportedPeptide( searchHit, analysis );
 		
 	}
 
@@ -112,7 +131,7 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetReportedPeptide getCrosslinkReportedPeptide( SearchHit searchHit ) throws Exception {
+	private IProphetReportedPeptide getCrosslinkReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
 		
 		System.out.println( searchHit.getPeptide() );
 		System.out.println( "\t" + searchHit.getXlinkType() );
@@ -135,7 +154,7 @@ public class IProphetResultsParser {
 			System.out.println( "\t\t" + linkedPeptide.getPeptide() );
 			System.out.println( "\t\tpeptide num: " + peptideNumber );
 			
-			IProphetPeptide peptide = getPeptideFromLinkedPeptide( linkedPeptide );
+			IProphetPeptide peptide = getPeptideFromLinkedPeptide( linkedPeptide, analysis );
 			int position = 0;
 			
 			for( NameValueType nvt : linkedPeptide.getXlinkScore() ) {
@@ -174,7 +193,7 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetReportedPeptide getLooplinkReportedPeptide( SearchHit searchHit ) throws Exception {
+	private IProphetReportedPeptide getLooplinkReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
 		
 		System.out.println( searchHit.getPeptide() );
 		System.out.println( "\t" + searchHit.getXlinkType() );
@@ -182,7 +201,7 @@ public class IProphetResultsParser {
 		
 		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
 		
-		reportedPeptide.setPeptide1( getPeptideFromSearchHit( searchHit ) );
+		reportedPeptide.setPeptide1( getPeptideFromSearchHit( searchHit, analysis ) );
 		reportedPeptide.setType( IProphetConstants.LINK_TYPE_LOOPLINK );
 		
 		// add in the linked positions
@@ -214,11 +233,11 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetReportedPeptide getUnlinkedReportedPeptide( SearchHit searchHit ) throws Exception {
+	private IProphetReportedPeptide getUnlinkedReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
 		
 		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
 		
-		reportedPeptide.setPeptide1( getPeptideFromSearchHit( searchHit ) );
+		reportedPeptide.setPeptide1( getPeptideFromSearchHit( searchHit, analysis ) );
 		reportedPeptide.setType( IProphetConstants.LINK_TYPE_UNLINKED );
 		
 		return reportedPeptide;
@@ -231,7 +250,7 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetPeptide getPeptideFromSearchHit( SearchHit searchHit ) throws Exception {
+	private IProphetPeptide getPeptideFromSearchHit( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
 		
 		IProphetPeptide peptide = new IProphetPeptide();
 		
@@ -250,6 +269,10 @@ public class IProphetResultsParser {
 				double massDifferenceDouble = mam.getMass() - KojakConstants.AA_MASS.get( residue );
 				BigDecimal massDifference = BigDecimal.valueOf( massDifferenceDouble );
 				massDifference = massDifference.setScale( 6, BigDecimal.ROUND_HALF_UP );
+
+				// don't add static mods as mods
+				if( ModUtils.isStaticMod(residue, massDifference, analysis.getKojakConfReader() ) )
+					continue;
 				
 				if( !mods.containsKey( position ) )
 					mods.put( position, new HashSet<BigDecimal>() );
@@ -270,7 +293,7 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetPeptide getPeptideFromLinkedPeptide( LinkedPeptide linkedPeptide ) throws Exception {
+	private IProphetPeptide getPeptideFromLinkedPeptide( LinkedPeptide linkedPeptide, IProphetAnalysis analysis ) throws Exception {
 		
 		IProphetPeptide peptide = new IProphetPeptide();
 		
@@ -289,6 +312,10 @@ public class IProphetResultsParser {
 				double massDifferenceDouble = mam.getMass() - KojakConstants.AA_MASS.get( residue );
 				BigDecimal massDifference = BigDecimal.valueOf( massDifferenceDouble );
 				massDifference = massDifference.setScale( 6, BigDecimal.ROUND_HALF_UP );
+
+				// don't add static mods as mods
+				if( ModUtils.isStaticMod(residue, massDifference, analysis.getKojakConfReader() ) )
+					continue;
 				
 				if( !mods.containsKey( position ) )
 					mods.put( position, new HashSet<BigDecimal>() );

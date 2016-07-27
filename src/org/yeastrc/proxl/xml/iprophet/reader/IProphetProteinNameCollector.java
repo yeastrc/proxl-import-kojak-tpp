@@ -48,33 +48,80 @@ public class IProphetProteinNameCollector {
 								
 								// skip if the score is 0, we don't import these
 								InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny();
-								if( ipresult.getProbability().equals( BigDecimal.valueOf( 0 ) ) )
+								if( ipresult.getProbability().compareTo( new BigDecimal( "0" ) ) == 0 )
 									continue;
 								
 								if( PepXMLUtils.getHitType( searchHit ) == IProphetConstants.LINK_TYPE_CROSSLINK ) {
 									
 									for( LinkedPeptide linkedPeptide : searchHit.getXlink().getLinkedPeptide() ) {
-										proteinNames.add( linkedPeptide.getProtein() );
+										
+										Collection<String> proteinsToAdd = new HashSet<>();
+										
+										if( !PepXMLUtils.isDecoyName( analysis.getDecoyIdentifiers(),  linkedPeptide.getProtein() ) )
+											proteinsToAdd.add( linkedPeptide.getProtein() );
 										
 										if( linkedPeptide.getAlternativeProtein() != null ) {
 											for( AltProteinDataType altProtein : linkedPeptide.getAlternativeProtein() ) {
-												proteinNames.add( altProtein.getProtein() );
+												if( !PepXMLUtils.isDecoyName( analysis.getDecoyIdentifiers(),  altProtein.getProtein() ) )
+													proteinsToAdd.add( altProtein.getProtein() );
 											}
 										}
+										
+										if( proteinsToAdd.size() < 1 ) {
+											
+											String hitSummary = "";
+											
+											hitSummary += "protein: " + linkedPeptide.getProtein() + "\n";
+											
+											if( searchHit.getAlternativeProtein() != null ) {
+												for( AltProteinDataType altProtein : linkedPeptide.getAlternativeProtein() ) {
+													hitSummary += "alt protein: " + altProtein.getProtein() + "\n";
+												}
+											}
+											
+											throw new Exception( "Got no proteins to add for this target hit: " + hitSummary );
+										}
+										
+										proteinNames.addAll( proteinsToAdd );
 									}
 									
 								} else {
 									
 									// for looplinks and unlinkeds
-									proteinNames.add( searchHit.getProtein() );
+									
+									Collection<String> proteinsToAdd = new HashSet<>();
+									
+									if( !PepXMLUtils.isDecoyName( analysis.getDecoyIdentifiers(),  searchHit.getProtein() ) )
+										proteinsToAdd.add( searchHit.getProtein() );
 									
 									if( searchHit.getAlternativeProtein() != null ) {
 										for( AltProteinDataType altProtein : searchHit.getAlternativeProtein() ) {
-											proteinNames.add( altProtein.getProtein() );
+											
+											if( !PepXMLUtils.isDecoyName( analysis.getDecoyIdentifiers(),  altProtein.getProtein() ) )
+												proteinsToAdd.add( altProtein.getProtein() );
 										}
 									}
 									
+									if( proteinsToAdd.size() < 1 ) {
+										
+										String hitSummary = "";
+										
+										hitSummary += "protein: " + searchHit.getProtein() + "\n";
+										
+										if( searchHit.getAlternativeProtein() != null ) {
+											for( AltProteinDataType altProtein : searchHit.getAlternativeProtein() ) {
+												hitSummary += "alt protein: " + altProtein.getProtein() + "\n";
+											}
+										}
+										
+										throw new Exception( "Got no proteins to add for this target hit: " + hitSummary );
+									}
+									
+									proteinNames.addAll( proteinsToAdd );
+									
 								}
+								
+
 								
 
 							}

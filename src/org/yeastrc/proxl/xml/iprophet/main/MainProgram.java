@@ -39,9 +39,10 @@ public class MainProgram {
 		decoyIdentifiers.add( "rand1" );
 		
 		analysis.setDecoyIdentifiers( decoyIdentifiers );
+		analysis.setKojakConfReader( KojakConfReader.getInstance( testKojakConfFile) );
 		
 		XMLBuilder builder = new XMLBuilder();
-		builder.buildAndSaveXML(analysis, new File( outFile ), "edc", KojakConfReader.getInstance( testKojakConfFile), new File( testFastaFile ) );		
+		builder.buildAndSaveXML(analysis, new File( outFile ), "edc", new File( testFastaFile ) );		
 	}
 	
 	public static void main( String[] args ) throws Exception {

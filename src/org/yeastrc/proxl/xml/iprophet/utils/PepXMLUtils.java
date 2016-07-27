@@ -19,6 +19,23 @@ public class PepXMLUtils {
 	public static final String XLINK_TYPE_UNLINKED = "na";
 	
 	/**
+	 * Given a peptide sequence such as PIPTLDE, return all sequences that represent
+	 * all possible combinations of leucine and isoleucine substitutions. E.g.:
+	 * 
+	 * PIPTLDE
+	 * PLPTLDE
+	 * PIPTIDE
+	 * PLPTIDE
+	 * 
+	 * @param sequence
+	 * @return
+	 */
+	public Collection<String> getAllLeucineIsoleucineTransormations( String sequence ) {
+		
+		return null;
+	}
+	
+	/**
 	 * Get the type of link represented by the search hit
 	 * 
 	 * @param searchHit
@@ -64,24 +81,23 @@ public class PepXMLUtils {
 		
 		return version;		
 	}
-	
+
 	/**
-	 * Check whether the given searchHit is a decoy.
-	 * 
+	 * Return true if any of the supplied names contain one of the decoy strings
 	 * @param decoyStrings
-	 * @param searchHit
+	 * @param name
 	 * @return
-	 * @throws Exception
 	 */
-	public static boolean isDecoy( Collection<String> decoyStrings, SearchHit searchHit ) throws Exception {
+	public static boolean isDecoyName( Collection<String> decoyStrings, String name ) {
 		
-		for( String decoyString : decoyStrings ) {
-			if( isDecoy( decoyString, searchHit ) )
+		for( String decoyName : decoyStrings ) {
+			if( PepXMLUtils.caseInsensitiveStringContains( decoyName,  name ) )
 				return true;
 		}
 		
 		return false;
 	}
+	
 	
 	/**
 	 * Check whether the searchHit is a decoy. For crosslinks, this is a decoy only if both linked peptides only
@@ -93,27 +109,29 @@ public class PepXMLUtils {
 	 * @return
 	 * @throws Exception
 	 */
-	public static boolean isDecoy( String decoyString, SearchHit searchHit ) throws Exception {
+	public static boolean isDecoy( Collection<String> decoyStrings, SearchHit searchHit ) throws Exception {
+		
+		//System.out.print( "Testing \"" + searchHit.getProtein() + "\"... " );
 		
 		// testing crosslinks (is more involved)
 		if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_CROSSLINK ) ) {
 			
 			// if either of the linked peptides are decoy hits, the xlink is a decoy
-			if( isDecoy( decoyString, searchHit.getXlink().getLinkedPeptide().get( 0 ) ) ||
-				isDecoy( decoyString, searchHit.getXlink().getLinkedPeptide().get( 1 ) ) )
+			if( isDecoy( decoyStrings, searchHit.getXlink().getLinkedPeptide().get( 0 ) ) ||
+				isDecoy( decoyStrings, searchHit.getXlink().getLinkedPeptide().get( 1 ) ) ) {
+				
 					return true;
+			}
 			
 			return false;
 		}
 		
 		if( searchHit.getProtein() == null ) {
-			System.out.println( searchHit );
-			return false;
+			throw new Exception( "Got null for protein on search hit?" );
 		}
 		
 		// if we got here, the type is either unlinked or looplinks, the test is the same
-		if( !isUnmapped( searchHit.getProtein() ) &&
-			!PepXMLUtils.caseInsensitiveStringContains( decoyString, searchHit.getProtein() ) ) {
+		if( !isDecoyName( decoyStrings, searchHit.getProtein() ) ) {
 			return false;
 		}
 		
@@ -121,12 +139,12 @@ public class PepXMLUtils {
 		// if any of the alternative proteins listed are not decoy proteins, this is not a decoy
 		if( searchHit.getAlternativeProtein() != null && searchHit.getAlternativeProtein().size() > 0 ) {
 			for( AltProteinDataType ap : searchHit.getAlternativeProtein() ) {
-				if( !PepXMLUtils.caseInsensitiveStringContains( decoyString, ap.getProtein() ) ) {
+				//System.out.print( ap.getProtein() + "... " );
+				if( !isDecoyName( decoyStrings, ap.getProtein() ) ) {
 					return false;
 				}
 			}
 		}
-		
 		
 		return true;	// if we get here, all names for all associated proteins contained the decoy identifier string
 	}
@@ -139,15 +157,15 @@ public class PepXMLUtils {
 	 * @return
 	 * @throws Exception
 	 */
-	private static boolean isDecoy( String decoyString, LinkedPeptide linkedPeptide ) throws Exception {
+	private static boolean isDecoy( Collection<String> decoyStrings, LinkedPeptide linkedPeptide ) throws Exception {
 		
-		if( !PepXMLUtils.caseInsensitiveStringContains( decoyString, linkedPeptide.getProtein() ) ) {
+		if( !isDecoyName( decoyStrings, linkedPeptide.getProtein() ) ) {
 			return false;
 		}
 		
 		if( linkedPeptide.getAlternativeProtein() != null && linkedPeptide.getAlternativeProtein().size() > 0 ) {
 			for( AltProteinDataType ap : linkedPeptide.getAlternativeProtein() ) {
-				if( !PepXMLUtils.caseInsensitiveStringContains( decoyString, ap.getProtein() ) ) {
+				if( !isDecoyName( decoyStrings, ap.getProtein() ) ) {
 					return false;
 				}
 			}
@@ -159,10 +177,6 @@ public class PepXMLUtils {
 	
 	private static boolean caseInsensitiveStringContains( String testString, String containingString ) {
 		return Pattern.compile(Pattern.quote(testString), Pattern.CASE_INSENSITIVE).matcher(containingString).find();
-	}
-	
-	private static boolean isUnmapped( String testString ) {
-		return PepXMLUtils.caseInsensitiveStringContains( IProphetConstants.UNMAPPED_STRING, testString );
 	}
 	
 }
