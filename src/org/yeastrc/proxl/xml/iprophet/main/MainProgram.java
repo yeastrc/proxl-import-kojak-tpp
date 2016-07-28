@@ -40,9 +40,10 @@ public class MainProgram {
 		
 		analysis.setDecoyIdentifiers( decoyIdentifiers );
 		analysis.setKojakConfReader( KojakConfReader.getInstance( testKojakConfFile) );
+		analysis.setFastaFile( new File( testFastaFile ) );
 		
 		XMLBuilder builder = new XMLBuilder();
-		builder.buildAndSaveXML(analysis, new File( outFile ), "edc", new File( testFastaFile ) );		
+		builder.buildAndSaveXML(analysis, new File( outFile ), "edc" );		
 	}
 	
 	public static void main( String[] args ) throws Exception {

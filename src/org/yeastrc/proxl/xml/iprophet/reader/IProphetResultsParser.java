@@ -1,10 +1,12 @@
 package org.yeastrc.proxl.xml.iprophet.reader;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 
 import net.systemsbiology.regis_web.pepxml.AltProteinDataType;
@@ -21,6 +23,9 @@ import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.S
 import net.systemsbiology.regis_web.pepxml.NameValueType;
 import net.systemsbiology.regis_web.pepxml.PeptideprophetResult;
 
+import org.yeastrc.fasta.FASTAEntry;
+import org.yeastrc.fasta.FASTAHeader;
+import org.yeastrc.fasta.FASTAReader;
 import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
 import org.yeastrc.proxl.xml.iprophet.constants.KojakConstants;
 import org.yeastrc.proxl.xml.iprophet.objects.IProphetPeptide;
@@ -29,6 +34,9 @@ import org.yeastrc.proxl.xml.iprophet.objects.IProphetResult;
 import org.yeastrc.proxl.xml.iprophet.utils.ModUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.ScanParsingUtils;
+import org.yeastrc.proxl_import.api.xml_dto.Protein;
+import org.yeastrc.proxl_import.api.xml_dto.ProteinAnnotation;
+import org.yeastrc.taxonomy.main.GetTaxonomyId;
 
 public class IProphetResultsParser {
 
@@ -47,7 +55,7 @@ public class IProphetResultsParser {
 	 */
 	public Map<IProphetReportedPeptide, Collection<IProphetResult>> getResultsFromAnalysis( IProphetAnalysis analysis ) throws Exception {
 		
-		Map<IProphetReportedPeptide, Collection<IProphetResult>> results = new HashMap<IProphetReportedPeptide, Collection<IProphetResult>>();
+		Map<IProphetReportedPeptide, Collection<IProphetResult>> results = new HashMap<IProphetReportedPeptide, Collection<IProphetResult>>();		
 		
 		for( MsmsRunSummary runSummary : analysis.getAnalysis().getMsmsRunSummary() ) {
 			for( SpectrumQuery spectrumQuery : runSummary.getSpectrumQuery() ) {
@@ -59,29 +67,12 @@ public class IProphetResultsParser {
 								// only one interprophet result will appear for a search hit, and we are only
 								// interested in search hits with an interprophet result.
 								
-								String sequence = searchHit.getPeptide();
-								if( sequence.equals( "RIDLAGR" ) ) {
-									
-									String hitSummary = "";
-									
-									hitSummary += "peptide: " + searchHit.getPeptide() + "\n";
-									hitSummary += "protein: " + searchHit.getProtein() + "\n";
-									
-									if( searchHit.getAlternativeProtein() != null ) {
-										for( AltProteinDataType altProtein : searchHit.getAlternativeProtein() ) {
-											hitSummary += "alt protein: " + altProtein.getProtein() + "\n";
-										}
-									}
-									
-									throw new Exception( "Decoy status is: " + PepXMLUtils.isDecoy( analysis.getDecoyIdentifiers(), searchHit) + " for\n" + hitSummary );
-								}
-								
 								// skip this if it's a decoy
 								if( PepXMLUtils.isDecoy( analysis.getDecoyIdentifiers(), searchHit) )
 									continue;
 								
 								// get our result
-								IProphetResult result = getResult( spectrumQuery, searchHit );
+								IProphetResult result = getResult( runSummary, spectrumQuery, searchHit );
 								
 								// skip if the probability is 0 (another way to check for decoys)
 								if( result.getInterProphetScore().compareTo( new BigDecimal( "0" ) ) == 0  )
@@ -93,7 +84,28 @@ public class IProphetResultsParser {
 								if( !results.containsKey( reportedPeptide ) )
 									results.put( reportedPeptide, new ArrayList<IProphetResult>() );
 								
-								results.get( reportedPeptide ).add( result );								
+								results.get( reportedPeptide ).add( result );
+								
+								
+								/*
+								 * Kojak reports leucine/isoleucine variations as individual peptide matches in its results
+								 * file as tied as rank 1 hits to a spectrum. This is preferred by proxl, however, peptideprophet
+								 * and iprophet only score a single rank 1 hit for a spectrum. If we only keep the peptide that
+								 * iprophet scored, we may lose valuable information if the leucine->isoleucine variant of that
+								 * peptide matched proteins of interest in the FASTA file.
+								 * 
+								 * To address this, iterate over the other search hits for this search result, and keep all other
+								 * rank 1 hits that are merely leucine/isoleucine substitutions of the scored rank 1 hit.
+								 */
+								Collection<IProphetReportedPeptide> otherReportedPeptides = getAllLeucineIsoleucineSubstitutions( reportedPeptide, searchResult, analysis );
+								
+								for( IProphetReportedPeptide otherReportedPeptide : otherReportedPeptides ) {									
+									if( !results.containsKey( otherReportedPeptide ) )
+										results.put( otherReportedPeptide, new ArrayList<IProphetResult>() );
+									
+									results.get( otherReportedPeptide ).add( result );
+								}
+								
 							}
 						}
 					}
@@ -101,8 +113,223 @@ public class IProphetResultsParser {
 			}
 		}
 		
+		/*
+		 * Because it is impossible to know if a reported peptide only maps to decoys or not in peptideprophet results
+		 * (since it also lists all proteins that match leucine/isoleucine substitutions as protein hits for a peptide)
+		 * we need to confirm whether or not the reported peptides whose leucine/isoleucine substitutions matched
+		 * proteins in the FASTA file exclusively match to decoys or not. If they do, remove them.
+		 */
+		
+		Collection<IProphetReportedPeptide> reportedPeptidesToConfirm = new HashSet<>();
+		reportedPeptidesToConfirm.addAll( results.keySet() );
+		
+		if( reportedPeptidesToConfirm.size() > 0 ) {
+			
+			// collection of all protein names we need to confirm
+			Collection<String> proteinNames = new HashSet<>();
+			
+			// cache the relevant protein sequences
+			Map<String, String> proteinSequences = new HashMap<>();	
+			
+			for( IProphetReportedPeptide reportedPeptide : reportedPeptidesToConfirm ) {
+				proteinNames.addAll( reportedPeptide.getPeptide1().getTargetProteins() );
+				if( reportedPeptide.getPeptide2() != null )
+					proteinNames.addAll( reportedPeptide.getPeptide2().getTargetProteins() );
+			}
+			
+			// build the cache of protein sequences
+			FASTAReader reader = null;
+			try {
+				reader = FASTAReader.getInstance( analysis.getFastaFile() );
+			
+		        FASTAEntry entry = reader.readNext();
+		        while( entry != null ) {        	
+
+		        	for( FASTAHeader header : entry.getHeaders() ) {
+		        		
+		        		for( String testString : proteinNames ) {
+		        			if( header.getName().startsWith( testString ) ) {
+		        				proteinSequences.put( header.getName(), entry.getSequence() );
+		        			}
+		        		}
+		        		
+		        	}
+		            entry = reader.readNext();
+		        }
+		        
+			} finally {
+				if( reader != null ){
+					reader.close();
+					reader = null;
+				}
+			}
+			
+			// now have cache of relevant protein names and sequences. iterate over the reportedPeptidesToConfirm and
+			// remove associated proteins from peptides where that peptide is not actually found in that protein
+			for( IProphetReportedPeptide reportedPeptide : reportedPeptidesToConfirm ) {
+				
+				for (Iterator<String> i = reportedPeptide.getPeptide1().getTargetProteins().iterator(); i.hasNext();) {
+					String protein = i.next();
+					boolean foundProtein = false;
+					
+					for( String cachedProteinName : proteinSequences.keySet() ) {
+						if( cachedProteinName.startsWith( protein ) ) {
+							if( proteinSequences.get( cachedProteinName ).toLowerCase().contains( reportedPeptide.getPeptide1().getSequence().toLowerCase() ) )
+								foundProtein = true;
+						}
+					}
+					
+					if( !foundProtein )
+						i.remove();
+					
+				}
+				
+				
+				if( reportedPeptide.getType() == IProphetConstants.LINK_TYPE_CROSSLINK ) {
+					
+					for (Iterator<String> i = reportedPeptide.getPeptide2().getTargetProteins().iterator(); i.hasNext();) {
+						String protein = i.next();
+						boolean foundProtein = false;
+						
+						for( String cachedProteinName : proteinSequences.keySet() ) {
+							if( cachedProteinName.startsWith( protein ) ) {
+								if( proteinSequences.get( cachedProteinName ).toLowerCase().contains( reportedPeptide.getPeptide2().getSequence().toLowerCase() ) )
+									foundProtein = true;
+							}
+						}
+						
+						if( !foundProtein )
+							i.remove();
+						
+					}
+					
+				}
+				
+			}
+			
+			// now we can iterate over the reportedPeptidesToConfirm and remove any from our results where there are 0
+			// targetProteins left for a peptide
+			for( IProphetReportedPeptide reportedPeptide : reportedPeptidesToConfirm ) {
+				
+				if( reportedPeptide.getPeptide1().getTargetProteins().size() < 1 ) {
+					System.out.println( "INFO: Removing " + reportedPeptide + " from results, does not match a target protein." );
+					results.remove( reportedPeptide );
+				}
+				
+				else if( reportedPeptide.getType() == IProphetConstants.LINK_TYPE_CROSSLINK && reportedPeptide.getPeptide2().getTargetProteins().size() < 1) {
+					System.out.println( "INFO: Removing " + reportedPeptide + " from results, does not match a target protein." );
+					results.remove( reportedPeptide );
+				}
+				
+			}
+			
+			
+			
+		}
+		
 		return results;
 	}
+
+	
+	private Collection<IProphetReportedPeptide>  getAllLeucineIsoleucineSubstitutions( IProphetReportedPeptide reportedPeptide, SearchResult searchResult, IProphetAnalysis analysis ) throws Exception {
+		
+		//System.out.println( "Calling getAllLeucineIsoleucineSubstitutions()" );
+		
+		Collection<IProphetReportedPeptide> reportedPeptides = new HashSet<IProphetReportedPeptide>();
+				
+		for( SearchHit otherSearchHit : searchResult.getSearchHit() ) {
+			IProphetReportedPeptide otherReportedPeptide = getReportedPeptide( otherSearchHit, analysis );
+
+			// if they're not the same type, there's no match
+			if( reportedPeptide.getType() != otherReportedPeptide.getType() )
+				continue;
+			
+			// don't return the same reported peptide that was passed in
+			if( reportedPeptide.equals( otherReportedPeptide ) ) continue;
+
+			// perform test by substitution all Is and Ls with =s and comparing for string equality
+			String testSequence = reportedPeptide.toString();
+			testSequence = testSequence.replaceAll( "I", "=" );
+			testSequence = testSequence.replaceAll( "L", "=" );			
+			
+			String otherSequence = otherReportedPeptide.toString();
+			otherSequence = otherSequence.replaceAll( "I", "=" );
+			otherSequence = otherSequence.replaceAll( "L", "=" );
+			
+			
+			if( testSequence.equals( otherSequence ) ) {
+				
+				//System.out.println( "Adding " + otherReportedPeptide );
+				
+				reportedPeptides.add( otherReportedPeptide );
+			} else {
+				
+				if( otherReportedPeptide.getType() == IProphetConstants.LINK_TYPE_CROSSLINK ) {
+					
+					// if we're testing a crosslink, be sure to test the other possible arrangement of peptides 1 and 2
+					
+					// switch peptides 1 and 2
+					IProphetPeptide tmpPeptide = otherReportedPeptide.getPeptide1();
+					otherReportedPeptide.setPeptide1( otherReportedPeptide.getPeptide2() );
+					otherReportedPeptide.setPeptide2( tmpPeptide );
+					
+					otherSequence = otherReportedPeptide.toString();
+					otherSequence = otherSequence.replaceAll( "I", "=" );
+					otherSequence = otherSequence.replaceAll( "L", "=" );
+					
+					if( testSequence.equals( otherSequence ) ) {
+						
+						// switch back
+						otherReportedPeptide.setPeptide2( otherReportedPeptide.getPeptide1() );
+						otherReportedPeptide.setPeptide1( tmpPeptide );
+						
+						reportedPeptides.add( otherReportedPeptide );
+					}
+					
+				}
+				
+			}
+			
+		}
+		
+		
+		return reportedPeptides;
+	}
+	
+	private Collection<String> getTargetProteinsForSearchHit( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
+		Collection<String> targetProteins = new HashSet<>();
+		
+		String protein = searchHit.getProtein();
+		if( !PepXMLUtils.isDecoyName( analysis.getDecoyIdentifiers(), protein ) )
+			targetProteins.add( protein );
+		
+		if( searchHit.getAlternativeProtein() != null ) {
+			for( AltProteinDataType altProtein  : searchHit.getAlternativeProtein() ) {
+				if( !PepXMLUtils.isDecoyName( analysis.getDecoyIdentifiers(), altProtein.getProtein() ) )
+					targetProteins.add( altProtein.getProtein() );
+			}
+		}
+		
+		return targetProteins;
+	}
+	
+	private Collection<String> getTargetProteinsForLinkedPeptide( LinkedPeptide linkedPeptide, IProphetAnalysis analysis ) throws Exception {
+		Collection<String> targetProteins = new HashSet<>();
+		
+		String protein = linkedPeptide.getProtein();
+		if( !PepXMLUtils.isDecoyName( analysis.getDecoyIdentifiers(), protein ) )
+			targetProteins.add( protein );
+		
+		if( linkedPeptide.getAlternativeProtein() != null ) {
+			for( AltProteinDataType altProtein  : linkedPeptide.getAlternativeProtein() ) {
+				if( !PepXMLUtils.isDecoyName( analysis.getDecoyIdentifiers(), altProtein.getProtein() ) )
+					targetProteins.add( altProtein.getProtein() );
+			}
+		}
+		
+		return targetProteins;
+	}
+	
 	
 	/**
 	 * Get the IProphetReportedPeptide for the given SearchHit
@@ -133,8 +360,8 @@ public class IProphetResultsParser {
 	 */
 	private IProphetReportedPeptide getCrosslinkReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
 		
-		System.out.println( searchHit.getPeptide() );
-		System.out.println( "\t" + searchHit.getXlinkType() );
+		//System.out.println( searchHit.getPeptide() );
+		//System.out.println( "\t" + searchHit.getXlinkType() );
 		
 		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
 		reportedPeptide.setType( IProphetConstants.LINK_TYPE_CROSSLINK );
@@ -151,8 +378,8 @@ public class IProphetResultsParser {
 			}
 			
 			
-			System.out.println( "\t\t" + linkedPeptide.getPeptide() );
-			System.out.println( "\t\tpeptide num: " + peptideNumber );
+			//System.out.println( "\t\t" + linkedPeptide.getPeptide() );
+			//System.out.println( "\t\tpeptide num: " + peptideNumber );
 			
 			IProphetPeptide peptide = getPeptideFromLinkedPeptide( linkedPeptide, analysis );
 			int position = 0;
@@ -161,7 +388,7 @@ public class IProphetResultsParser {
 								
 				if( nvt.getName().equals( "link" ) ) {
 					
-					System.out.println( "\t\t" + nvt.getValueAttribute() );
+					//System.out.println( "\t\t" + nvt.getValueAttribute() );
 					
 					if( position == 0 )
 						position = Integer.valueOf( nvt.getValueAttribute() );
@@ -195,8 +422,8 @@ public class IProphetResultsParser {
 	 */
 	private IProphetReportedPeptide getLooplinkReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
 		
-		System.out.println( searchHit.getPeptide() );
-		System.out.println( "\t" + searchHit.getXlinkType() );
+		//System.out.println( searchHit.getPeptide() );
+		//System.out.println( "\t" + searchHit.getXlinkType() );
 
 		
 		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
@@ -210,7 +437,7 @@ public class IProphetResultsParser {
 		for( NameValueType nvt : xl.getXlinkScore() ) {
 			if( nvt.getName().equals( "link" ) ) {
 				
-				System.out.println( "\t\t" + nvt.getValueAttribute() );
+				//System.out.println( "\t\t" + nvt.getValueAttribute() );
 				
 				if( reportedPeptide.getPosition1() == 0 )
 					reportedPeptide.setPosition1( Integer.valueOf( nvt.getValueAttribute() ) );
@@ -256,6 +483,8 @@ public class IProphetResultsParser {
 		
 		peptide.setSequence( searchHit.getPeptide() );
 		
+		peptide.setTargetProteins( getTargetProteinsForSearchHit( searchHit, analysis ) );
+		
 		ModInfoDataType modInfo = searchHit.getModificationInfo();
 		
 		if( modInfo!= null && modInfo.getModAminoacidMass() != null && modInfo.getModAminoacidMass().size() > 0 ) {
@@ -299,6 +528,9 @@ public class IProphetResultsParser {
 		
 		peptide.setSequence( linkedPeptide.getPeptide() );
 		
+		peptide.setTargetProteins( getTargetProteinsForLinkedPeptide( linkedPeptide, analysis ) );
+		
+		
 		ModInfoDataType modInfo = linkedPeptide.getModificationInfo();
 		
 		if( modInfo!= null && modInfo.getModAminoacidMass() != null && modInfo.getModAminoacidMass().size() > 0 ) {
@@ -338,11 +570,14 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception If any of the expected scores are not found
 	 */
-	private IProphetResult getResult( SpectrumQuery spectrumQuery, SearchHit searchHit ) throws Exception {
+	private IProphetResult getResult( MsmsRunSummary runSummary, SpectrumQuery spectrumQuery, SearchHit searchHit ) throws Exception {
 		
 		IProphetResult result = new IProphetResult();
 		
-		result.setScanFile( ScanParsingUtils.getFilenameFromReportedScan( spectrumQuery.getSpectrum() ) );
+		result.setScanFile( ScanParsingUtils.getFilenameFromReportedScan( spectrumQuery.getSpectrum() ) + runSummary.getRawData() );
+		
+		
+		
 		result.setScanNumber( (int)spectrumQuery.getStartScan() );
 		result.setCharge( spectrumQuery.getAssumedCharge().intValue() );
 		

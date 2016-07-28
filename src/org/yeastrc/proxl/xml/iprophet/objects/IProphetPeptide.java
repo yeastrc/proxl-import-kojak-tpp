@@ -64,8 +64,16 @@ public class IProphetPeptide {
 	public void setModifications(Map<Integer, Collection<BigDecimal>> modifications) {
 		this.modifications = modifications;
 	}
-	
+	public Collection<String> getTargetProteins() {
+		return targetProteins;
+	}
+	public void setTargetProteins(Collection<String> targetProteins) {
+		this.targetProteins = targetProteins;
+	}
+
+
 	private String sequence;
 	private Map<Integer, Collection<BigDecimal>> modifications;
+	private Collection<String> targetProteins;
 	
 }

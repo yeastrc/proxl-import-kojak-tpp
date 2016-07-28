@@ -83,14 +83,14 @@ public class XMLBuilder {
 	public void buildAndSaveXML(
 								 IProphetAnalysis analysis,
 			                     File outfile,
-			                     String linkerName,
-			                     File fastaFile
+			                     String linkerName
 			                    ) throws Exception {
 
 		// perform the error analysis up front
 		IProphetErrorAnalyzer analyzer = IProphetErrorAnalyzer.getInstance( analysis );
 		analyzer.performAnalysis();
 		
+		File fastaFile = analysis.getFastaFile();
 		
 		ProxlInput proxlInputRoot = new ProxlInput();
 

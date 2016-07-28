@@ -33,8 +33,9 @@ public class IProphetAnalysis {
 	
 	private MsmsPipelineAnalysis analysis;
 	private Collection<String> decoyIdentifiers;
-	private String fastaDatabase;
+	private String fastaDatabaseName;
 	private KojakConfReader kojakConfReader;
+	private File fastaFile;
 	
 	/**
 	 * Get the root element of the pepXML file as a JAXB object
@@ -58,14 +59,22 @@ public class IProphetAnalysis {
 	}
 
 	public String getFastaDatabase() {
-		return fastaDatabase;
+		return fastaDatabaseName;
 	}
 
 	public void setFastaDatabase(String fastaDatabase) {
-		this.fastaDatabase = fastaDatabase;
+		this.fastaDatabaseName = fastaDatabase;
 	}
 	
 	
+
+	public File getFastaFile() {
+		return fastaFile;
+	}
+
+	public void setFastaFile(File fastaFile) {
+		this.fastaFile = fastaFile;
+	}
 
 	public KojakConfReader getKojakConfReader() {
 		return kojakConfReader;
@@ -84,17 +93,17 @@ public class IProphetAnalysis {
 	 * @throws Exception
 	 */
 	public String getFASTADatabase() throws Exception {
-		if( this.fastaDatabase == null ) {
+		if( this.fastaDatabaseName == null ) {
 			
 			String localPath = this.getAnalysis().getMsmsRunSummary().get( 0 ).getSearchSummary().get( 0 ).getSearchDatabase().getLocalPath();
 			if( localPath == null )
 				throw new Exception( "Could not determine local path for FASTA file used in analysis." );
 			
 			File fastaFile = new File( localPath );
-			this.fastaDatabase = fastaFile.getName();			
+			this.fastaDatabaseName = fastaFile.getName();			
 		}
 		
-		return this.fastaDatabase;
+		return this.fastaDatabaseName;
 	}
 	
 	
