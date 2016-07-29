@@ -49,8 +49,8 @@ Usage:
  
  Example:
  
-  java -jar iProphet2Proxl.jar -x ./results.pep.xml -o ./results.proxl.xml\
-  -f /data/mass_spec/yeast.fa -l dss -k ./kojak1.conf -k ./kojak2.conf\
+  java -jar iProphet2Proxl.jar -x ./results.pep.xml -o ./results.proxl.xml
+  -f /data/mass_spec/yeast.fa -l dss -k ./kojak1.conf -k ./kojak2.conf
   -d random -d rand1 -d rand0
 
   More information: https://github.com/yeastrc/proxl-import-iprophet
