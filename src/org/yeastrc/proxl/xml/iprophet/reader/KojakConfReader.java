@@ -9,6 +9,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A class for reading the values from a Kojak conf file. Once a value is
+ * queried, it will read the file once and store the values for future
+ * reference.
+ * 
+ * @author mriffle
+ *
+ */
 public class KojakConfReader {
 
 	public static KojakConfReader getInstance( String filename ) {

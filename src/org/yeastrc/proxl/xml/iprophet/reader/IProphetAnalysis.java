@@ -36,6 +36,7 @@ public class IProphetAnalysis {
 	private String fastaDatabaseName;
 	private KojakConfReader kojakConfReader;
 	private File fastaFile;
+	private Collection<String> kojakConfFilePaths;
 	
 	/**
 	 * Get the root element of the pepXML file as a JAXB object
@@ -82,6 +83,15 @@ public class IProphetAnalysis {
 
 	public void setKojakConfReader(KojakConfReader kojakConfReader) {
 		this.kojakConfReader = kojakConfReader;
+	}
+	
+
+	public Collection<String> getKojakConfFilePaths() {
+		return kojakConfFilePaths;
+	}
+
+	public void setKojakConfFilePaths(Collection<String> kojakConfFilePaths) {
+		this.kojakConfFilePaths = kojakConfFilePaths;
 	}
 
 	/**

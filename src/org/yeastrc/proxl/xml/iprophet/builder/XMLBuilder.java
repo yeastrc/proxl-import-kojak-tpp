@@ -23,6 +23,7 @@ import org.yeastrc.proxl.xml.iprophet.reader.IProphetProteinNameCollector;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetResultsParser;
 import org.yeastrc.proxl.xml.iprophet.utils.ModUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
+import org.yeastrc.proxl_import.api.xml_dto.AnnotationSortOrder;
 import org.yeastrc.proxl_import.api.xml_dto.ConfigurationFile;
 import org.yeastrc.proxl_import.api.xml_dto.ConfigurationFiles;
 import org.yeastrc.proxl_import.api.xml_dto.CrosslinkMass;
@@ -50,6 +51,7 @@ import org.yeastrc.proxl_import.api.xml_dto.Protein;
 import org.yeastrc.proxl_import.api.xml_dto.ProteinAnnotation;
 import org.yeastrc.proxl_import.api.xml_dto.ProxlInput;
 import org.yeastrc.proxl_import.api.xml_dto.Psm;
+import org.yeastrc.proxl_import.api.xml_dto.PsmAnnotationSortOrder;
 import org.yeastrc.proxl_import.api.xml_dto.Psms;
 import org.yeastrc.proxl_import.api.xml_dto.ReportedPeptide;
 import org.yeastrc.proxl_import.api.xml_dto.ReportedPeptides;
@@ -73,11 +75,11 @@ import org.yeastrc.taxonomy.main.GetTaxonomyId;
 public class XMLBuilder {
 
 	/**
-	 * Take the populated pLink objects, convert to XML and write the XML file
+	 * Build and save the XML document based on the analysis results.
 	 * 
-	 * @param params The PLinkSearchParameters associated with this search
-	 * @param results The results parsed from the plink output
-	 * @param outfile The file to which the XML will be written
+	 * @param analysis The analysis
+	 * @param outfile The file into which to write the XML
+	 * @param linkerName The name of the linker 'e.g., dss'
 	 * @throws Exception
 	 */
 	public void buildAndSaveXML(
@@ -92,12 +94,25 @@ public class XMLBuilder {
 		
 		File fastaFile = analysis.getFastaFile();
 		
+		// root node of the XML
 		ProxlInput proxlInputRoot = new ProxlInput();
 
 		proxlInputRoot.setFastaFilename( analysis.getFASTADatabase() );
 		
 		SearchProgramInfo searchProgramInfo = new SearchProgramInfo();
 		proxlInputRoot.setSearchProgramInfo( searchProgramInfo );
+		
+		//
+		// Define the sort order
+		//
+		AnnotationSortOrder annotationSortOrder = new AnnotationSortOrder();
+		searchProgramInfo.setAnnotationSortOrder( annotationSortOrder );
+		
+		PsmAnnotationSortOrder psmAnnotationSortOrder = new PsmAnnotationSortOrder();
+		annotationSortOrder.setPsmAnnotationSortOrder( psmAnnotationSortOrder );
+		
+		psmAnnotationSortOrder.getSearchAnnotation().addAll( org.yeastrc.proxl.xml.iprophet.annotations.PSMAnnotationTypeSortOrder.getPSMAnnotationTypeSortOrder() );
+		
 		
 		SearchPrograms searchPrograms = new SearchPrograms();
 		searchProgramInfo.setSearchPrograms( searchPrograms );
@@ -231,13 +246,13 @@ public class XMLBuilder {
 		ReportedPeptides reportedPeptides = new ReportedPeptides();
 		proxlInputRoot.setReportedPeptides( reportedPeptides );
 		
+		// parse the data from the pepXML into a java data structure suitable for writing as ProXL XML
 		Map<IProphetReportedPeptide, Collection<IProphetResult>> resultsByReportedPeptide = 
 				IProphetResultsParser.getInstance().getResultsFromAnalysis( analysis );
 		
 		// create a unique set of peptides found, to ensure each one is found in at least 
 		// one of the reported proteins
 		Collection<String> peptides = new HashSet<>();
-		
 		
 		// iterate over each distinct reported peptide
 		for( IProphetReportedPeptide rp : resultsByReportedPeptide.keySet() ) {
@@ -452,20 +467,18 @@ public class XMLBuilder {
 		this.buildMatchedProteinsElement( proxlInputRoot, proteinNames, peptides, fastaFile );
 		
 		
-		
-		
-		
 		// add in the config file(s)
 		ConfigurationFiles xmlConfigurationFiles = new ConfigurationFiles();
 		proxlInputRoot.setConfigurationFiles( xmlConfigurationFiles );
 		
-		ConfigurationFile xmlConfigurationFile = new ConfigurationFile();
-		xmlConfigurationFiles.getConfigurationFile().add( xmlConfigurationFile );
-		
-		xmlConfigurationFile.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
-		xmlConfigurationFile.setFileName( analysis.getKojakConfReader().getFile().getName() );
-		xmlConfigurationFile.setFileContent( Files.readAllBytes( FileSystems.getDefault().getPath( analysis.getKojakConfReader().getFile().getAbsolutePath() ) ) );
-		
+		for( String path : analysis.getKojakConfFilePaths() ) {
+			ConfigurationFile xmlConfigurationFile = new ConfigurationFile();
+			xmlConfigurationFiles.getConfigurationFile().add( xmlConfigurationFile );
+			
+			xmlConfigurationFile.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
+			xmlConfigurationFile.setFileName( (new File( path )).getName() );
+			xmlConfigurationFile.setFileContent( Files.readAllBytes( FileSystems.getDefault().getPath( path ) ) );
+		}
 		
 		//make the xml file
 		CreateImportFileFromJavaObjectsMain.getInstance().createImportFileFromJavaObjectsMain(outfile, proxlInputRoot);
@@ -541,7 +554,7 @@ public class XMLBuilder {
             entry = reader.readNext();
         }
         
-        // ensure each peptides if found in at least one of the matched peptides' sequences
+        // ensure each peptides if found in at least one of the matched proteins' sequences
         for( String peptide : peptides ) {
         	boolean found = false;
         	for( String protein : sequences ) {

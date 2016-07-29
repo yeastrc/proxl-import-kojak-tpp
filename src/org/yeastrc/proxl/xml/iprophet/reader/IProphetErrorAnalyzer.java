@@ -16,8 +16,6 @@ import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.S
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.AnalysisResult;
 
 import org.yeastrc.proxl.xml.iprophet.objects.ProbabilitySumCounter;
-import org.yeastrc.proxl.xml.iprophet.objects.TargetDecoyCounter;
-import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
 
 /**
  * InterProphet does not report a score with inherent meaning, at least towards the end of providing
@@ -46,7 +44,6 @@ public class IProphetErrorAnalyzer {
 	 */
 	public void performAnalysis() throws Exception {
 		
-		Map<BigDecimal, TargetDecoyCounter> scoreCounts = new HashMap<BigDecimal, TargetDecoyCounter>();
 		Map<BigDecimal, ProbabilitySumCounter> probabilitySums = new HashMap<BigDecimal, ProbabilitySumCounter>();
 		
 		MsmsPipelineAnalysis xmlAnalysis = analysis.getAnalysis();
@@ -76,23 +73,6 @@ public class IProphetErrorAnalyzer {
 								psc.setpCount( psc.getpCount() + score.doubleValue() );
 								psc.setOneMinusPCount( psc.getOneMinusPCount() + ( 1.0 - score.doubleValue() ) );
 								
-								boolean isDecoy = PepXMLUtils.isDecoy( analysis.getDecoyIdentifiers(), searchHit );
-								
-								TargetDecoyCounter tdc = null;
-								if( scoreCounts.containsKey( score ) )
-									tdc = scoreCounts.get( score );
-								else {
-									tdc = new TargetDecoyCounter();
-									scoreCounts.put( score,  tdc );
-								}
-								
-								
-								if( isDecoy ) {
-									tdc.setDecoyCount( tdc.getDecoyCount() + 1 );
-								} else {
-									tdc.setTargetCount( tdc.getTargetCount() + 1 );
-								}
-								
 							}
 						}
 					}
@@ -107,12 +87,9 @@ public class IProphetErrorAnalyzer {
 		 * decoys reported for a given score or better.
 		 */
 		
-		List<BigDecimal> scoreList = new ArrayList<BigDecimal>( scoreCounts.keySet() );
+		List<BigDecimal> scoreList = new ArrayList<BigDecimal>( probabilitySums.keySet() );
 		Collections.sort( scoreList, Collections.reverseOrder() );
-		
-		int targetCount = 0;
-		int decoyCount = 0;
-		
+
 		double pSum = 0;
 		double oneMinusPSum = 0;
 		
@@ -123,49 +100,10 @@ public class IProphetErrorAnalyzer {
 			oneMinusPSum += psc.getOneMinusPCount();
 			
 			psc.setpCount( pSum );
-			psc.setOneMinusPCount( oneMinusPSum );
-			
-			
-			
-			TargetDecoyCounter tdc = scoreCounts.get( score );
-			
-			targetCount += tdc.getTargetCount();
-			decoyCount += tdc.getDecoyCount();
-			
-			tdc.setTargetCount( targetCount );
-			tdc.setDecoyCount( decoyCount );
-						
+			psc.setOneMinusPCount( oneMinusPSum );				
 		}
 		
-		this.scoreCounts = scoreCounts;
 		this.probabilitySums = probabilitySums;
-	}
-	
-	/**
-	 * Get the FDR based on decoy counts for a given probability score--calculated as # decoys / # targets.
-	 * Note, that it is possible for this to be over 1 when there are more decoys than targets found at
-	 * a given score.
-	 * 
-	 * @param score
-	 * @return
-	 * @throws Exception If a target decoy analysis hasn't been done, or if the score wasn't found in the search
-	 */
-	public BigDecimal getSimpleDecoyFDR( BigDecimal score ) throws Exception {
-		
-		if( this.scoreCounts == null )
-			throw new Exception( "Must call performAnalysis() first." );
-		
-		if( !this.scoreCounts.containsKey( score ) )
-			throw new Exception( "The score: " + score + " was not found in this search." );
-		
-		TargetDecoyCounter tdc = this.scoreCounts.get( score );
-		double fdr = (double)tdc.getDecoyCount() / ( tdc.getTargetCount() );
-		
-		BigDecimal retValue = new BigDecimal( fdr );
-		retValue = retValue.setScale(4, BigDecimal.ROUND_HALF_EVEN);
-		
-		
-		return retValue;
 	}
 	
 	/**
@@ -204,7 +142,6 @@ public class IProphetErrorAnalyzer {
 	}
 	
 	private IProphetAnalysis analysis;
-	private Map<BigDecimal, TargetDecoyCounter> scoreCounts;
 	private Map<BigDecimal, ProbabilitySumCounter> probabilitySums;
 	
 	

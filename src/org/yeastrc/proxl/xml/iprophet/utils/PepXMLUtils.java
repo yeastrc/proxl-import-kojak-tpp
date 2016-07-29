@@ -110,9 +110,7 @@ public class PepXMLUtils {
 	 * @throws Exception
 	 */
 	public static boolean isDecoy( Collection<String> decoyStrings, SearchHit searchHit ) throws Exception {
-		
-		//System.out.print( "Testing \"" + searchHit.getProtein() + "\"... " );
-		
+				
 		// testing crosslinks (is more involved)
 		if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_CROSSLINK ) ) {
 			
@@ -139,7 +137,6 @@ public class PepXMLUtils {
 		// if any of the alternative proteins listed are not decoy proteins, this is not a decoy
 		if( searchHit.getAlternativeProtein() != null && searchHit.getAlternativeProtein().size() > 0 ) {
 			for( AltProteinDataType ap : searchHit.getAlternativeProtein() ) {
-				//System.out.print( ap.getProtein() + "... " );
 				if( !isDecoyName( decoyStrings, ap.getProtein() ) ) {
 					return false;
 				}

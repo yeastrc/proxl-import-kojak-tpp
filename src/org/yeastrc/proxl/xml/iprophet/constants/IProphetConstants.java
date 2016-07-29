@@ -11,7 +11,4 @@ public class IProphetConstants {
 	public static final int LINK_TYPE_LOOPLINK = 1;
 	public static final int LINK_TYPE_UNLINKED = 2;
 	
-	
-	public static final String UNMAPPED_STRING = "-_UNMAPPED";
-	
 }

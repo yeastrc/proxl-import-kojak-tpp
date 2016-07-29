@@ -1,7 +1,6 @@
 package org.yeastrc.proxl.xml.iprophet.reader;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,9 +33,6 @@ import org.yeastrc.proxl.xml.iprophet.objects.IProphetResult;
 import org.yeastrc.proxl.xml.iprophet.utils.ModUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.ScanParsingUtils;
-import org.yeastrc.proxl_import.api.xml_dto.Protein;
-import org.yeastrc.proxl_import.api.xml_dto.ProteinAnnotation;
-import org.yeastrc.taxonomy.main.GetTaxonomyId;
 
 public class IProphetResultsParser {
 
@@ -230,7 +226,20 @@ public class IProphetResultsParser {
 		return results;
 	}
 
-	
+	/**
+	 * For a given reported peptide, find all other reported peptides that are leucine<->isoleucine
+	 * substituitions of that reported peptide, where those substutions match a  protein
+	 * in the FASTA file. Since Kojak reports all such peptides as separate PSMs, this is done by
+	 * iterating over the other rank 1 hits for a search result and getting those hits that are
+	 * merely leucine<->isoleucine substitutions of the reported peptide. These are guaranteed to
+	 * hit a protein in the FASTA file, otherwise Kojak would not have reported them.
+	 * 
+	 * @param reportedPeptide
+	 * @param searchResult
+	 * @param analysis
+	 * @return
+	 * @throws Exception
+	 */
 	private Collection<IProphetReportedPeptide>  getAllLeucineIsoleucineSubstitutions( IProphetReportedPeptide reportedPeptide, SearchResult searchResult, IProphetAnalysis analysis ) throws Exception {
 		
 		//System.out.println( "Calling getAllLeucineIsoleucineSubstitutions()" );
@@ -296,6 +305,15 @@ public class IProphetResultsParser {
 		return reportedPeptides;
 	}
 	
+	/**
+	 * For a given search hit, return a collection of strings that are target protein names
+	 * reported by iProphet. Decoy names are filtered out.
+	 * 
+	 * @param searchHit
+	 * @param analysis
+	 * @return
+	 * @throws Exception
+	 */
 	private Collection<String> getTargetProteinsForSearchHit( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
 		Collection<String> targetProteins = new HashSet<>();
 		
@@ -313,6 +331,15 @@ public class IProphetResultsParser {
 		return targetProteins;
 	}
 	
+	/**
+	 * For a given search hit, return a collection of strings that are target protein names
+	 * reported by iProphet. Decoy names are filtered out.
+	 * 
+	 * @param linkedPeptide
+	 * @param analysis
+	 * @return
+	 * @throws Exception
+	 */
 	private Collection<String> getTargetProteinsForLinkedPeptide( LinkedPeptide linkedPeptide, IProphetAnalysis analysis ) throws Exception {
 		Collection<String> targetProteins = new HashSet<>();
 		
