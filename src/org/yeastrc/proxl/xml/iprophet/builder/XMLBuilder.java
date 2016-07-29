@@ -84,8 +84,7 @@ public class XMLBuilder {
 	 */
 	public void buildAndSaveXML(
 								 IProphetAnalysis analysis,
-			                     File outfile,
-			                     String linkerName
+			                     File outfile
 			                    ) throws Exception {
 
 		// perform the error analysis up front
@@ -197,7 +196,7 @@ public class XMLBuilder {
 		Linker linker = new Linker();
 		linkers.getLinker().add( linker );
 		
-		linker.setName( linkerName );
+		linker.setName( analysis.getLinkerName() );
 		
 		CrosslinkMasses masses = new CrosslinkMasses();
 		linker.setCrosslinkMasses( masses );
@@ -504,55 +503,66 @@ public class XMLBuilder {
 		
 		// iterate over FASTA file, add entries for proteins IDed in the search
 		
-		FASTAReader reader = FASTAReader.getInstance( fastaFile );
+		FASTAReader reader = null;
 		
-        FASTAEntry entry = reader.readNext();
-        while( entry != null ) {
-
-        	boolean includeThisEntry = false;
-        	
-            for( FASTAHeader header : entry.getHeaders() ) {
-                for( String proteinName : proteinNames ) {
-                	
-                	// using startsWith instead of equals, since names in the results
-                	// may be truncated.
-                	if( header.getName().startsWith( proteinName ) ) {
-                		includeThisEntry = true;
-                		break;
-                	}
-                }
-                
-                if( includeThisEntry ) break;
-            }
-
-            if( includeThisEntry ) {
-            	Protein xmlProtein = new Protein();
-            	xmlMatchedProteins.getProtein().add( xmlProtein );
-            	
-            	xmlProtein.setSequence( entry.getSequence() );
-            	sequences.add( entry.getSequence() );
-            	
-            	for( FASTAHeader header : entry.getHeaders() ) {
-            		
-            		ProteinAnnotation xmlProteinAnnotation = new ProteinAnnotation();
-            		xmlProtein.getProteinAnnotation().add( xmlProteinAnnotation );
-            		
-            		if( header.getDescription() != null )
-            			xmlProteinAnnotation.setDescription( header.getDescription() );
-            		
-            		xmlProteinAnnotation.setName( header.getName() );
-            		
-            		Integer taxId = GetTaxonomyId.getInstance().getTaxonomyId( header.getName(), header.getDescription() );
-            		
-            		if( taxId != null )
-            			xmlProteinAnnotation.setNcbiTaxonomyId( BigInteger.valueOf( taxId ) );
-            	}
-            }
-           
-
-            // get the next entry in the FASTA file
-            entry = reader.readNext();
-        }
+		try {
+			reader = FASTAReader.getInstance( fastaFile );
+		
+	        FASTAEntry entry = reader.readNext();
+	        while( entry != null ) {
+	
+	        	boolean includeThisEntry = false;
+	        	
+	            for( FASTAHeader header : entry.getHeaders() ) {
+	                for( String proteinName : proteinNames ) {
+	                	
+	                	// using startsWith instead of equals, since names in the results
+	                	// may be truncated.
+	                	if( header.getName().startsWith( proteinName ) ) {
+	                		includeThisEntry = true;
+	                		break;
+	                	}
+	                }
+	                
+	                if( includeThisEntry ) break;
+	            }
+	
+	            if( includeThisEntry ) {
+	            	Protein xmlProtein = new Protein();
+	            	xmlMatchedProteins.getProtein().add( xmlProtein );
+	            	
+	            	xmlProtein.setSequence( entry.getSequence() );
+	            	sequences.add( entry.getSequence() );
+	            	
+	            	for( FASTAHeader header : entry.getHeaders() ) {
+	            		
+	            		ProteinAnnotation xmlProteinAnnotation = new ProteinAnnotation();
+	            		xmlProtein.getProteinAnnotation().add( xmlProteinAnnotation );
+	            		
+	            		if( header.getDescription() != null )
+	            			xmlProteinAnnotation.setDescription( header.getDescription() );
+	            		
+	            		xmlProteinAnnotation.setName( header.getName() );
+	            		
+	            		Integer taxId = GetTaxonomyId.getInstance().getTaxonomyId( header.getName(), header.getDescription() );
+	            		
+	            		if( taxId != null )
+	            			xmlProteinAnnotation.setNcbiTaxonomyId( BigInteger.valueOf( taxId ) );
+	            	}
+	            }
+	           
+	
+	            // get the next entry in the FASTA file
+	            entry = reader.readNext();
+	        }
+		} finally {
+			
+			if( reader != null ) {
+				reader.close();
+				reader = null;
+			}
+			
+		}
         
         // ensure each peptides if found in at least one of the matched proteins' sequences
         for( String peptide : peptides ) {

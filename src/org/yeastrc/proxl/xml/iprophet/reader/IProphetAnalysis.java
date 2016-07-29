@@ -33,10 +33,10 @@ public class IProphetAnalysis {
 	
 	private MsmsPipelineAnalysis analysis;
 	private Collection<String> decoyIdentifiers;
-	private String fastaDatabaseName;
 	private KojakConfReader kojakConfReader;
 	private File fastaFile;
 	private Collection<String> kojakConfFilePaths;
+	private String linkerName;
 	
 	/**
 	 * Get the root element of the pepXML file as a JAXB object
@@ -58,16 +58,6 @@ public class IProphetAnalysis {
 	public void setDecoyIdentifiers(Collection<String> decoyIdentifiers) {
 		this.decoyIdentifiers = decoyIdentifiers;
 	}
-
-	public String getFastaDatabase() {
-		return fastaDatabaseName;
-	}
-
-	public void setFastaDatabase(String fastaDatabase) {
-		this.fastaDatabaseName = fastaDatabase;
-	}
-	
-	
 
 	public File getFastaFile() {
 		return fastaFile;
@@ -94,6 +84,14 @@ public class IProphetAnalysis {
 		this.kojakConfFilePaths = kojakConfFilePaths;
 	}
 
+	public String getLinkerName() {
+		return linkerName;
+	}
+
+	public void setLinkerName(String linkerName) {
+		this.linkerName = linkerName;
+	}
+
 	/**
 	 * Get the name of the FASTA file used in this search. It is assumed that, if multiple
 	 * msms run summary elements are present, that they all use the same FASTA file. Only
@@ -102,18 +100,8 @@ public class IProphetAnalysis {
 	 * @return
 	 * @throws Exception
 	 */
-	public String getFASTADatabase() throws Exception {
-		if( this.fastaDatabaseName == null ) {
-			
-			String localPath = this.getAnalysis().getMsmsRunSummary().get( 0 ).getSearchSummary().get( 0 ).getSearchDatabase().getLocalPath();
-			if( localPath == null )
-				throw new Exception( "Could not determine local path for FASTA file used in analysis." );
-			
-			File fastaFile = new File( localPath );
-			this.fastaDatabaseName = fastaFile.getName();			
-		}
-		
-		return this.fastaDatabaseName;
+	public String getFASTADatabase() throws Exception {		
+		return this.getFastaFile().getName();
 	}
 	
 	

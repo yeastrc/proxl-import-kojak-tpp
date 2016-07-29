@@ -4,53 +4,47 @@ import jargs.gnu.CmdLineParser;
 import jargs.gnu.CmdLineParser.IllegalOptionValueException;
 import jargs.gnu.CmdLineParser.UnknownOptionException;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.HashSet;
+import java.io.InputStreamReader;
+import java.util.Vector;
 
+import org.apache.commons.lang3.StringUtils;
 import org.yeastrc.proxl.xml.iprophet.builder.XMLBuilder;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
-import org.yeastrc.proxl.xml.iprophet.reader.IProphetErrorAnalyzer;
 import org.yeastrc.proxl.xml.iprophet.reader.KojakConfReader;
-import org.yeastrc.proxl.xml.iprophet.utils.ScanParsingUtils;
 
 
 /**
  * Run the program.
  * @author Michael Riffle
- * @date Mar 23, 2016
+ * @date July, 2016
  *
  */
 public class MainProgram {
-
-	private static String testPepXMLFile = "C:\\Users\\mriffle\\Desktop\\interact-RJAZ205_XLSecondScoreFrac.ipro.pep.xml";
-	private static String testFastaFile = "C:\\Users\\mriffle\\Desktop\\RJAZ200-RJAZ211_3pepCnt_plusRev_RAND.fasta";
-	private static String testKojakConfFile = "C:\\Users\\mriffle\\Desktop\\Kojak-1.4.2-QEP2_2016_0121_RJ_69_205_xlink05.conf";
-	private static String outFile = "C:\\Users\\mriffle\\Desktop\\test.proxl.xml";
 	
-	public void convertSearch( String pepXMLFile ) throws Exception {
+	public void convertSearch( String pepXMLFilePath,
+			                   String outFilePath,
+			                   String fastaFilePath,
+			                   Vector<String> kojakConfFilePaths,
+			                   String linkerName,
+			                   Vector<String> decoyIdentifiers
+			                  ) throws Exception {
 		
-		IProphetAnalysis analysis = IProphetAnalysis.loadAnalysis( testPepXMLFile );
-		
-		Collection<String> decoyIdentifiers = new HashSet<>();
-		decoyIdentifiers.add( "random" );
-		decoyIdentifiers.add( "rand0" );
-		decoyIdentifiers.add( "rand1" );
+		IProphetAnalysis analysis = IProphetAnalysis.loadAnalysis( pepXMLFilePath );
 		
 		analysis.setDecoyIdentifiers( decoyIdentifiers );
-		analysis.setKojakConfReader( KojakConfReader.getInstance( testKojakConfFile) );
-		analysis.setFastaFile( new File( testFastaFile ) );
+		analysis.setKojakConfReader( KojakConfReader.getInstance( kojakConfFilePaths.get( 0 ) ) );
+		analysis.setFastaFile( new File( fastaFilePath ) );
+		analysis.setKojakConfFilePaths( kojakConfFilePaths );
+		analysis.setLinkerName( linkerName );
 		
 		XMLBuilder builder = new XMLBuilder();
-		builder.buildAndSaveXML(analysis, new File( outFile ), "edc" );		
+		builder.buildAndSaveXML(analysis, new File( outFilePath ) );		
 	}
 	
 	public static void main( String[] args ) throws Exception {
 		
-		(new MainProgram()).convertSearch( null );
-		
-		/*
 		if( args.length < 1 || args[ 0 ].equals( "-h" ) ) {
 			printHelp();
 			System.exit( 0 );
@@ -59,8 +53,11 @@ public class MainProgram {
 		CmdLineParser cmdLineParser = new CmdLineParser();
         
 		CmdLineParser.Option pepXMLOpt = cmdLineParser.addStringOption( 'x', "pepxml" );	
-		CmdLineParser.Option outfileOpt = cmdLineParser.addStringOption( 'o', "out" );	
-
+		CmdLineParser.Option outfileOpt = cmdLineParser.addStringOption( 'o', "out-file" );	
+		CmdLineParser.Option kojakConfOpt = cmdLineParser.addStringOption( 'k', "kojak-conf" );	
+		CmdLineParser.Option fastaOpt = cmdLineParser.addStringOption( 'f', "fasta-file" );
+		CmdLineParser.Option linkerOpt = cmdLineParser.addStringOption( 'l', "linker-name" );
+		CmdLineParser.Option decoyOpt = cmdLineParser.addStringOption( 'd', "decoy-string" );
 
         // parse command line options
         try { cmdLineParser.parse(args); }
@@ -72,21 +69,159 @@ public class MainProgram {
            printHelp();
            System.exit( 1 );
         }
-		
-        String pepXMLFile = (String)cmdLineParser.getOptionValue( pepXMLOpt );
-        String outFile = (String)cmdLineParser.getOptionValue( outfileOpt );
         
+		/*
+		 * Parse the pepXML file option
+		 */
+        String pepXMLFilePath = (String)cmdLineParser.getOptionValue( pepXMLOpt );
+        if( pepXMLFilePath == null || pepXMLFilePath.equals( "" ) ) {
+        	System.err.println( "Must specify a pepXML file. See help:\n" );
+        	printHelp();
+        	
+        	System.exit( 1 );
+        }
+        
+        File pepXMLFile = new File( pepXMLFilePath );
+        if( !pepXMLFile.exists() ) {
+        	System.err.println( "The pepXML file: " + pepXMLFilePath + " does not exist." );
+        	System.exit( 1 );
+        }
+        
+        if( !pepXMLFile.canRead() ) {
+        	System.err.println( "Can not read pepXML file: " + pepXMLFilePath );
+        	System.exit( 1 );
+        }
+        
+        
+        /*
+         * Parse the output file option
+         */
+        String outFilePath = (String)cmdLineParser.getOptionValue( outfileOpt );
+        if( outFilePath == null || outFilePath.equals( "" ) ) {
+        	System.err.println( "Must specify an output file. See help:\n" );
+        	printHelp();
+        	
+        	System.exit( 1 );
+        }
+        File outFile = new File( outFilePath );
+        if( outFile.exists() ) {
+        	System.err.println( "The output file: " + outFilePath + " already exists." );
+        	System.exit( 1 );
+        }
+        
+        
+        /*
+         * Parse the kojak conf files options
+         */
+        @SuppressWarnings("unchecked")
+		Vector<String> kojakConfFilePaths = (Vector<String>)cmdLineParser.getOptionValues( kojakConfOpt );
+        if( kojakConfFilePaths == null || kojakConfFilePaths.size() < 1 ) {
+        	System.err.println( "Must specify at least one kojak conf file. See help:\n" );
+        	printHelp();
+        	
+        	System.exit( 1 );
+        }
+        
+        for( String kojakConfFilePath : kojakConfFilePaths ) {
+        	File kojakConfFile = new File( kojakConfFilePath );
+        	
+            if( !kojakConfFile.exists() ) {
+            	System.err.println( "The kojak conf file: " + kojakConfFile + " does not exist." );
+            	System.exit( 1 );
+            }
+            
+            if( !kojakConfFile.canRead() ) {
+            	System.err.println( "Can not read kojak conf file: " + pepXMLFilePath );
+            	System.exit( 1 );
+            }
+            
+        }
+        
+        
+        /*
+         * Parse the linker name option
+         */
+		String linkerName = (String)cmdLineParser.getOptionValue( linkerOpt );
+        if( linkerName == null ) {
+        	System.err.println( "Must specify a linker name. See help:\n" );
+        	printHelp();
+        	
+        	System.exit( 1 );
+        }
+
+        
+        /*
+         * Parse the decoy strings option
+         */
+        @SuppressWarnings("unchecked")
+		Vector<String> decoyNames = (Vector<String>)cmdLineParser.getOptionValues( decoyOpt );
+        if( decoyNames == null || decoyNames.size() < 1 ) {
+        	System.err.println( "\nWARNING: No decoy identifiers given. Assuming all results are targets." );
+        }
+        
+        
+        /*
+         * Parse the fasta file option
+         */
+        String fastaFilePath = (String)cmdLineParser.getOptionValue( fastaOpt );
+        if( fastaFilePath == null || fastaFilePath.equals( "" ) ) {
+        	System.err.println( "Must specify a fasta file. See help:\n" );
+        	printHelp();
+        	
+        	System.exit( 1 );
+        }
+        
+        File fastaFile = new File( fastaFilePath );
+        if( !fastaFile.exists() ) {
+        	System.err.println( "The fasta file: " + fastaFilePath + " does not exist." );
+        	System.exit( 1 );
+        }
+        
+        if( !fastaFile.canRead() ) {
+        	System.err.println( "Can not read fasta file: " + fastaFilePath );
+        	System.exit( 1 );
+        }
+        
+        
+        System.err.println( "Converting pepXML to ProXL XML with the following parameters:" );
+        System.err.println( "\tpepXML path: " + pepXMLFilePath );
+        System.err.println( "\toutput file path: " + outFilePath );
+        System.err.println( "\tfasta file path: " + fastaFilePath );
+        System.err.println( "\tkojak conf file paths: " );
+        for( String kojakConfFilePath : kojakConfFilePaths ) {
+        	 System.err.println( "\t\t" + kojakConfFilePath );
+        }
+     
+        System.err.println( "\tlinker name: " + linkerName );
+        System.err.println( "\tdecoyIdentifiers: " + StringUtils.join( decoyNames, "," ) );        
+        
+        /*
+         * Run the conversion
+         */
         MainProgram mp = new MainProgram();
-        mp.convertSearch( pepXMLFile );
-        */
+        mp.convertSearch( pepXMLFilePath,
+        		          outFilePath,
+        		          fastaFilePath,
+        		          kojakConfFilePaths,
+        		          linkerName,
+        		          decoyNames
+        		         );
+
+        
+        System.err.println( "Done." );        
+        System.exit( 0 );        
 	}
 	
-	/**
-	 * Print helpt to STD OUT
-	 */
-	private static void printHelp() {
+	public static void printHelp() {
 		
-
-		
+		try( BufferedReader br = new BufferedReader( new InputStreamReader( MainProgram.class.getResourceAsStream( "help.txt" ) ) ) ) {
+			
+			String line = null;
+			while ( ( line = br.readLine() ) != null )
+				System.out.println( line );				
+			
+		} catch ( Exception e ) {
+			System.out.println( "Error printing help." );
+		}
 	}
 }
