@@ -436,6 +436,34 @@ public class IProphetResultsParser {
 				reportedPeptide.setPosition2( position );
 			}
 			
+			
+		}
+		
+		
+		// ensure peptides and positions are consistently ordered so that any two reported peptides containing the same
+		// two peptides and linked positions are recognized as the same
+		
+		if( reportedPeptide.getPeptide1().toString().compareTo( reportedPeptide.getPeptide2().toString() ) > 0 ) {
+
+			// swap them
+			IProphetPeptide tpep = reportedPeptide.getPeptide1();
+			int tpos = reportedPeptide.getPosition1();
+			
+			reportedPeptide.setPeptide1( reportedPeptide.getPeptide2() );
+			reportedPeptide.setPosition1( reportedPeptide.getPosition2() );
+			
+			reportedPeptide.setPeptide2( tpep );
+			reportedPeptide.setPosition2( tpos );
+		} else if( reportedPeptide.getPeptide1().toString().compareTo( reportedPeptide.getPeptide1().toString() ) == 0 ) {
+			
+			// peptides are the same, should we swap positions?
+			if( reportedPeptide.getPosition1() > reportedPeptide.getPosition2() ) {
+				int tpos = reportedPeptide.getPosition1();
+				
+				reportedPeptide.setPosition1( reportedPeptide.getPosition2() );
+				reportedPeptide.setPosition2( tpos );
+			}
+			
 		}
 		
 		return reportedPeptide;
@@ -477,6 +505,14 @@ public class IProphetResultsParser {
 		
 		if( reportedPeptide.getPosition1() == 0 || reportedPeptide.getPosition2() == 0 )
 			throw new Exception( "Did not get two positions for looplink." );
+		
+		if( reportedPeptide.getPosition1() > reportedPeptide.getPosition2() ) {
+			int tpos = reportedPeptide.getPosition1();
+			
+			reportedPeptide.setPosition1( reportedPeptide.getPosition2() );
+			reportedPeptide.setPosition2( tpos );
+		}
+		
 		
 		return reportedPeptide;
 	}
