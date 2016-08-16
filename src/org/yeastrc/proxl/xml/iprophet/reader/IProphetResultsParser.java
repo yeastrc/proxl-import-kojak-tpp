@@ -454,7 +454,7 @@ public class IProphetResultsParser {
 			
 			reportedPeptide.setPeptide2( tpep );
 			reportedPeptide.setPosition2( tpos );
-		} else if( reportedPeptide.getPeptide1().toString().compareTo( reportedPeptide.getPeptide1().toString() ) == 0 ) {
+		} else if( reportedPeptide.getPeptide1().toString().compareTo( reportedPeptide.getPeptide2().toString() ) == 0 ) {
 			
 			// peptides are the same, should we swap positions?
 			if( reportedPeptide.getPosition1() > reportedPeptide.getPosition2() ) {
