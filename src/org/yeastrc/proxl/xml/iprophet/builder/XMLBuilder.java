@@ -421,7 +421,7 @@ public class XMLBuilder {
 					
 					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.KOJAK_ANNOTATION_TYPE_SCORE );
 					xmlFilterablePsmAnnotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
-					xmlFilterablePsmAnnotation.setValue( analyzer.getError( result.getInterProphetScore()) );
+					xmlFilterablePsmAnnotation.setValue( result.getKojakScore() );
 				}
 				
 				// add in the non-filterable descriptive annotations (e.g., calculated mass)

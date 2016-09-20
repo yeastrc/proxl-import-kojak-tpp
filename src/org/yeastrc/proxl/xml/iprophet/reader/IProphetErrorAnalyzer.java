@@ -57,7 +57,7 @@ public class IProphetErrorAnalyzer {
 					for( SearchHit searchHit : searchResult.getSearchHit() ) {
 						for( AnalysisResult analysisResult : searchHit.getAnalysisResult() ) {
 							if( analysisResult.getAnalysis().equals( "interprophet" ) ) {
-								InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny();
+								InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny().get( 0 );
 								
 								BigDecimal score = ipresult.getProbability();
 								

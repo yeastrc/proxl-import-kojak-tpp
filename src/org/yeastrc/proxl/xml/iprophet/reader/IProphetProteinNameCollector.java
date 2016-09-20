@@ -47,7 +47,7 @@ public class IProphetProteinNameCollector {
 									continue;
 								
 								// skip if the score is 0, we don't import these
-								InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny();
+								InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny().get( 0 );
 								if( ipresult.getProbability().compareTo( new BigDecimal( "0" ) ) == 0 )
 									continue;
 								

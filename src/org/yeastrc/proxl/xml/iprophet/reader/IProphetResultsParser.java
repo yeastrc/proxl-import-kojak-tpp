@@ -670,12 +670,12 @@ public class IProphetResultsParser {
 		for( AnalysisResult analysisResult : searchHit.getAnalysisResult() ) {
 			
 			if( analysisResult.getAnalysis().equals( "interprophet" ) ) {
-				InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny();
+				InterprophetResult ipresult = (InterprophetResult) analysisResult.getAny().get( 0 );
 				result.setInterProphetScore( ipresult.getProbability() );
 			}
 			
 			else if( analysisResult.getAnalysis().equals( "peptideprophet" ) ) {
-				PeptideprophetResult ppresult = (PeptideprophetResult) analysisResult.getAny();
+				PeptideprophetResult ppresult = (PeptideprophetResult) analysisResult.getAny().get( 0 );
 				result.setPeptideProphetScore( ppresult.getProbability() );
 			}
 		}

@@ -49,7 +49,12 @@ public class KojakConfReader {
 				}
 				
 				else if( fields[ 0 ].equals( "cross_link" ) && fields[ 1 ].equals( "=" ) ) {
-					this.crosslinkMasses.add( new BigDecimal( fields[ fields.length - 1 ] ) );
+					
+					try {
+						this.crosslinkMasses.add( new BigDecimal( fields[ fields.length - 1 ] ) );
+					} catch ( NumberFormatException e ) {
+						this.crosslinkMasses.add( new BigDecimal( fields[ fields.length - 2 ] ) );
+					}
 				}
 				
 				else if( fields[ 0 ].equals( "fixed_modification" ) && fields[ 1 ].equals( "=" ) ) {
