@@ -1,10 +1,13 @@
 package org.yeastrc.proxl.xml.iprophet.reader;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.Collection;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
+
+import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
 
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis;
 
@@ -37,6 +40,7 @@ public class IProphetAnalysis {
 	private File fastaFile;
 	private Collection<String> kojakConfFilePaths;
 	private String linkerName;
+	private BigDecimal importFilter = new BigDecimal( IProphetConstants.DEFAULT_IMPORT_CUTOFF );
 	
 	/**
 	 * Get the root element of the pepXML file as a JAXB object
@@ -102,6 +106,14 @@ public class IProphetAnalysis {
 	 */
 	public String getFASTADatabase() throws Exception {		
 		return this.getFastaFile().getName();
+	}
+
+	public BigDecimal getImportFilter() {
+		return importFilter;
+	}
+
+	public void setImportFilter(BigDecimal importFilter) {
+		this.importFilter = importFilter;
 	}
 	
 	

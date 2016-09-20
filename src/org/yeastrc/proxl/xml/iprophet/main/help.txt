@@ -30,6 +30,11 @@ Usage:
                             All protein names containing any of the
                             given decoy strings will be considered
                             decoy hits.
+                            
+     -i or --import-filter: Optional. Only PSMs with an error <= this
+                            value will be imported into ProXL. Default
+                            is 0.05. Set to 1 or more to disable
+                            import filtering.
  
  Example:
  

@@ -7,10 +7,12 @@ import jargs.gnu.CmdLineParser.UnknownOptionException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.util.Vector;
 
 import org.apache.commons.lang3.StringUtils;
 import org.yeastrc.proxl.xml.iprophet.builder.XMLBuilder;
+import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
 import org.yeastrc.proxl.xml.iprophet.reader.KojakConfReader;
 
@@ -28,7 +30,8 @@ public class MainProgram {
 			                   String fastaFilePath,
 			                   Vector<String> kojakConfFilePaths,
 			                   String linkerName,
-			                   Vector<String> decoyIdentifiers
+			                   Vector<String> decoyIdentifiers,
+			                   BigDecimal importCutoff
 			                  ) throws Exception {
 		
 		IProphetAnalysis analysis = IProphetAnalysis.loadAnalysis( pepXMLFilePath );
@@ -38,6 +41,8 @@ public class MainProgram {
 		analysis.setFastaFile( new File( fastaFilePath ) );
 		analysis.setKojakConfFilePaths( kojakConfFilePaths );
 		analysis.setLinkerName( linkerName );
+		if( importCutoff != null )
+			analysis.setImportFilter( importCutoff );
 		
 		XMLBuilder builder = new XMLBuilder();
 		builder.buildAndSaveXML(analysis, new File( outFilePath ) );		
@@ -58,6 +63,7 @@ public class MainProgram {
 		CmdLineParser.Option fastaOpt = cmdLineParser.addStringOption( 'f', "fasta-file" );
 		CmdLineParser.Option linkerOpt = cmdLineParser.addStringOption( 'l', "linker-name" );
 		CmdLineParser.Option decoyOpt = cmdLineParser.addStringOption( 'd', "decoy-string" );
+		CmdLineParser.Option importFilterCutoffOpt = cmdLineParser.addStringOption( 'i', "import-filter" );
 
         // parse command line options
         try { cmdLineParser.parse(args); }
@@ -183,10 +189,26 @@ public class MainProgram {
         }
         
         
+        /*
+         * Parse the import cutoff
+         */
+        BigDecimal importCutoff = null;
+        String importCutoffString = (String)cmdLineParser.getOptionValue( importFilterCutoffOpt );
+        
+        if( importCutoffString != null ) {
+	        try { importCutoff = new BigDecimal( importCutoffString ); }
+	        catch( Exception e ) {
+	        	System.err.println( "Expected a number for the import cutoff filter, got: " + importCutoffString );
+	        	System.exit( 1 );
+	        }
+        }
+
+        
         System.err.println( "Converting pepXML to ProXL XML with the following parameters:" );
         System.err.println( "\tpepXML path: " + pepXMLFilePath );
         System.err.println( "\toutput file path: " + outFilePath );
         System.err.println( "\tfasta file path: " + fastaFilePath );
+        System.err.println( "\timport cutoff: " + ( importCutoff == null ? IProphetConstants.DEFAULT_IMPORT_CUTOFF : importCutoff.toString() ) );
         System.err.println( "\tkojak conf file paths: " );
         for( String kojakConfFilePath : kojakConfFilePaths ) {
         	 System.err.println( "\t\t" + kojakConfFilePath );
@@ -204,7 +226,8 @@ public class MainProgram {
         		          fastaFilePath,
         		          kojakConfFilePaths,
         		          linkerName,
-        		          decoyNames
+        		          decoyNames,
+        		          importCutoff
         		         );
 
         

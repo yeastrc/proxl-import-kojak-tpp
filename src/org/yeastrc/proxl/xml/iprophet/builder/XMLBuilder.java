@@ -23,6 +23,7 @@ import org.yeastrc.proxl.xml.iprophet.reader.IProphetProteinNameCollector;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetResultsParser;
 import org.yeastrc.proxl.xml.iprophet.utils.ModUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
+import org.yeastrc.proxl_import.api.xml_dto.AnnotationCutoffsOnImport;
 import org.yeastrc.proxl_import.api.xml_dto.AnnotationSortOrder;
 import org.yeastrc.proxl_import.api.xml_dto.ConfigurationFile;
 import org.yeastrc.proxl_import.api.xml_dto.ConfigurationFiles;
@@ -51,10 +52,12 @@ import org.yeastrc.proxl_import.api.xml_dto.Protein;
 import org.yeastrc.proxl_import.api.xml_dto.ProteinAnnotation;
 import org.yeastrc.proxl_import.api.xml_dto.ProxlInput;
 import org.yeastrc.proxl_import.api.xml_dto.Psm;
+import org.yeastrc.proxl_import.api.xml_dto.PsmAnnotationCutoffsOnImport;
 import org.yeastrc.proxl_import.api.xml_dto.PsmAnnotationSortOrder;
 import org.yeastrc.proxl_import.api.xml_dto.Psms;
 import org.yeastrc.proxl_import.api.xml_dto.ReportedPeptide;
 import org.yeastrc.proxl_import.api.xml_dto.ReportedPeptides;
+import org.yeastrc.proxl_import.api.xml_dto.SearchAnnotationCutoff;
 import org.yeastrc.proxl_import.api.xml_dto.SearchProgram;
 import org.yeastrc.proxl_import.api.xml_dto.SearchProgram.PsmAnnotationTypes;
 import org.yeastrc.proxl_import.api.xml_dto.SearchProgramInfo;
@@ -186,6 +189,24 @@ public class XMLBuilder {
 			descriptivePsmAnnotationTypes.getDescriptivePsmAnnotationType().addAll( PSMAnnotationTypes.getDescriptivePsmAnnotationTypes( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK ) );
 		}
 		
+		
+		/*
+		 * Define the default import cutoffs
+		 */
+		if( analysis.getImportFilter() != null  && analysis.getImportFilter().floatValue() < 1.0 ) {
+			AnnotationCutoffsOnImport annotationCutoffsOnImport = new AnnotationCutoffsOnImport();
+			searchProgramInfo.setAnnotationCutoffsOnImport( annotationCutoffsOnImport );
+			
+			PsmAnnotationCutoffsOnImport psmAnnotationCutoffsOnImport = new PsmAnnotationCutoffsOnImport();
+			annotationCutoffsOnImport.setPsmAnnotationCutoffsOnImport( psmAnnotationCutoffsOnImport );
+			
+			SearchAnnotationCutoff searchAnnotationCutoff = new SearchAnnotationCutoff();
+			searchAnnotationCutoff.setAnnotationName( PSMAnnotationTypes.IPROPHET_ANNOTATION_TYPE_ERROR );
+			searchAnnotationCutoff.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
+			searchAnnotationCutoff.setCutoffValue( analysis.getImportFilter() );
+			
+			psmAnnotationCutoffsOnImport.getSearchAnnotationCutoff().add( searchAnnotationCutoff );
+		}
 		
 		//
 		// Define the linker information
