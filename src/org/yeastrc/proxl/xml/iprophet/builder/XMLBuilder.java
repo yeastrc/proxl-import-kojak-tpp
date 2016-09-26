@@ -484,7 +484,7 @@ public class XMLBuilder {
 		
 		// gather up the names of all referenced proteins
 		Collection<String> proteinNames = IProphetProteinNameCollector.getInstance().getProteinNames( analysis );
-		this.buildMatchedProteinsElement( proxlInputRoot, proteinNames, peptides, fastaFile );
+		this.buildMatchedProteinsElement( proxlInputRoot, proteinNames, peptides, fastaFile, analysis.getDecoyIdentifiers() );
 		
 		
 		// add in the config file(s)
@@ -515,7 +515,7 @@ public class XMLBuilder {
 	 * @param fastaFile
 	 * @throws Exception
 	 */
-	private void buildMatchedProteinsElement( ProxlInput proxlInput, Collection<String> proteinNames, Collection<String> peptides, File fastaFile ) throws Exception {
+	private void buildMatchedProteinsElement( ProxlInput proxlInput, Collection<String> proteinNames, Collection<String> peptides, File fastaFile, Collection<String> decoyStrings ) throws Exception {
 		
 		Collection<String> sequences = new HashSet<>();
 		
@@ -532,6 +532,14 @@ public class XMLBuilder {
 	        FASTAEntry entry = reader.readNext();
 	        while( entry != null ) {
 	
+	        	// if this is a decoy entry, skip it
+	        	if( isDecoyFastaEntry( entry, decoyStrings ) ) {
+	        		
+	        		// get the next entry in the FASTA file
+		            entry = reader.readNext();
+	        		continue;
+	        	}
+	        	
 	        	boolean includeThisEntry = false;
 	        	
 	            for( FASTAHeader header : entry.getHeaders() ) {
@@ -601,6 +609,25 @@ public class XMLBuilder {
 
 	}
 	
+	/**
+	 * Return true if the supplied FASTA entry is a decoy entry. False otherwise.
+	 * An entry is considered a decoy if any of the supplied decoy identifiers are present
+	 * anywhere in the header line.
+	 * 
+	 * @param entry
+	 * @param decoyIdentifiers
+	 * @return
+	 */
+	private boolean isDecoyFastaEntry( FASTAEntry entry, Collection<String> decoyIdentifiers ) {
+
+		for( String decoyId : decoyIdentifiers ) {
+			if( entry.getHeaderLine().toLowerCase().contains( decoyId.toLowerCase() ) )
+				return true;
+		}
+		
+		return false;
+		
+	}
 	
 	
 }
