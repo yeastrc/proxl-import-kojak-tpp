@@ -623,7 +623,7 @@ public class XMLBuilder {
 		for( String decoyId : decoyIdentifiers ) {			
 			for( FASTAHeader header : entry.getHeaders() ) {
 
-				if( header.getName().toLowerCase().contains( decoyId.toLowerCase() ) )
+				if( header.getName().contains( decoyId ) )
 					return true;
 				
 			}
