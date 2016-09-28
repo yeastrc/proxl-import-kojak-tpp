@@ -612,7 +612,7 @@ public class XMLBuilder {
 	/**
 	 * Return true if the supplied FASTA entry is a decoy entry. False otherwise.
 	 * An entry is considered a decoy if any of the supplied decoy identifiers are present
-	 * anywhere in the header line.
+	 * anywhere in the header name.
 	 * 
 	 * @param entry
 	 * @param decoyIdentifiers
@@ -620,13 +620,17 @@ public class XMLBuilder {
 	 */
 	private boolean isDecoyFastaEntry( FASTAEntry entry, Collection<String> decoyIdentifiers ) {
 
-		for( String decoyId : decoyIdentifiers ) {
-			if( entry.getHeaderLine().toLowerCase().contains( decoyId.toLowerCase() ) )
-				return true;
+		for( String decoyId : decoyIdentifiers ) {			
+			for( FASTAHeader header : entry.getHeaders() ) {
+
+				if( header.getName().toLowerCase().contains( decoyId.toLowerCase() ) )
+					return true;
+				
+			}
+			
 		}
 		
 		return false;
-		
 	}
 	
 	
