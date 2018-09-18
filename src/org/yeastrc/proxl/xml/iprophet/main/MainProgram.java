@@ -215,8 +215,6 @@ public class MainProgram {
 
         }
 
-        
-        System.exit( 0 );        
 	}
 	
 	public static void printHelp() {
