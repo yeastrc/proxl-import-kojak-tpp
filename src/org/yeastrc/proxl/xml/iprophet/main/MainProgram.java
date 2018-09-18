@@ -198,18 +198,24 @@ public class MainProgram {
         /*
          * Run the conversion
          */
-        ConverterRunner cr = new ConverterRunner();
-        cr.runConversion( pepXMLFilePath,
-        		          outFilePath,
-        		          fastaFilePath,
-        		          kojakConfFilePaths,
-        		          linkerName,
-        		          decoyNames,
-        		          importCutoff
-        		         );
+
+        try {
+	        ConverterRunner cr = new ConverterRunner();
+	        cr.runConversion( pepXMLFilePath,
+	        		          outFilePath,
+	        		          fastaFilePath,
+	        		          kojakConfFilePaths,
+	        		          linkerName,
+	        		          decoyNames,
+	        		          importCutoff
+	        		         );
+        } catch( Throwable t ) {
+
+        	System.err.println( "Got error during conversion: " + t.getMessage() );
+
+        }
 
         
-        System.err.println( "Done." );        
         System.exit( 0 );        
 	}
 	
