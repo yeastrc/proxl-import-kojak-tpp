@@ -18,9 +18,8 @@ import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
 import org.yeastrc.proxl.xml.iprophet.objects.IProphetReportedPeptide;
 import org.yeastrc.proxl.xml.iprophet.objects.IProphetResult;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
-import org.yeastrc.proxl.xml.iprophet.reader.IProphetErrorAnalyzer;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetProteinNameCollector;
-import org.yeastrc.proxl.xml.iprophet.reader.IProphetResultsParser;
+import org.yeastrc.proxl.xml.iprophet.reader.TPPErrorAnalysis;
 import org.yeastrc.proxl.xml.iprophet.utils.ModUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
 import org.yeastrc.proxl_import.api.xml_dto.AnnotationCutoffsOnImport;
@@ -87,12 +86,11 @@ public class XMLBuilder {
 	 */
 	public void buildAndSaveXML(
 								 IProphetAnalysis analysis,
+								 Map<IProphetReportedPeptide, Collection<IProphetResult>> resultsByReportedPeptide,
+								 TPPErrorAnalysis errorAnalysis,
 			                     File outfile
 			                    ) throws Exception {
 
-		// perform the error analysis up front
-		IProphetErrorAnalyzer analyzer = IProphetErrorAnalyzer.getInstance( analysis );
-		analyzer.performAnalysis();
 		
 		File fastaFile = analysis.getFastaFile();
 		
@@ -266,9 +264,7 @@ public class XMLBuilder {
 		ReportedPeptides reportedPeptides = new ReportedPeptides();
 		proxlInputRoot.setReportedPeptides( reportedPeptides );
 		
-		// parse the data from the pepXML into a java data structure suitable for writing as ProXL XML
-		Map<IProphetReportedPeptide, Collection<IProphetResult>> resultsByReportedPeptide = 
-				IProphetResultsParser.getInstance().getResultsFromAnalysis( analysis );
+
 		
 		// create a unique set of peptides found, to ensure each one is found in at least 
 		// one of the reported proteins
@@ -412,7 +408,7 @@ public class XMLBuilder {
 					
 					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.IPROPHET_ANNOTATION_TYPE_ERROR );
 					xmlFilterablePsmAnnotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
-					xmlFilterablePsmAnnotation.setValue( analyzer.getError( result.getInterProphetScore()) );
+					xmlFilterablePsmAnnotation.setValue( errorAnalysis.getError( result.getInterProphetScore() ) );
 				}
 
 				// handle iprophet score

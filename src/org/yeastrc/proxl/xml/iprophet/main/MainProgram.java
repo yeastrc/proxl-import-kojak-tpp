@@ -1,9 +1,5 @@
 package org.yeastrc.proxl.xml.iprophet.main;
 
-import jargs.gnu.CmdLineParser;
-import jargs.gnu.CmdLineParser.IllegalOptionValueException;
-import jargs.gnu.CmdLineParser.UnknownOptionException;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -11,10 +7,12 @@ import java.math.BigDecimal;
 import java.util.Vector;
 
 import org.apache.commons.lang3.StringUtils;
-import org.yeastrc.proxl.xml.iprophet.builder.XMLBuilder;
+import org.yeastrc.proxl.xml.iprophet.constants.ConverterConstants;
 import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
-import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
-import org.yeastrc.proxl.xml.iprophet.reader.KojakConfReader;
+
+import jargs.gnu.CmdLineParser;
+import jargs.gnu.CmdLineParser.IllegalOptionValueException;
+import jargs.gnu.CmdLineParser.UnknownOptionException;
 
 
 /**
@@ -25,30 +23,10 @@ import org.yeastrc.proxl.xml.iprophet.reader.KojakConfReader;
  */
 public class MainProgram {
 	
-	public void convertSearch( String pepXMLFilePath,
-			                   String outFilePath,
-			                   String fastaFilePath,
-			                   Vector<String> kojakConfFilePaths,
-			                   String linkerName,
-			                   Vector<String> decoyIdentifiers,
-			                   BigDecimal importCutoff
-			                  ) throws Exception {
-		
-		IProphetAnalysis analysis = IProphetAnalysis.loadAnalysis( pepXMLFilePath );
-		
-		analysis.setDecoyIdentifiers( decoyIdentifiers );
-		analysis.setKojakConfReader( KojakConfReader.getInstance( kojakConfFilePaths.get( 0 ) ) );
-		analysis.setFastaFile( new File( fastaFilePath ) );
-		analysis.setKojakConfFilePaths( kojakConfFilePaths );
-		analysis.setLinkerName( linkerName );
-		if( importCutoff != null )
-			analysis.setImportFilter( importCutoff );
-		
-		XMLBuilder builder = new XMLBuilder();
-		builder.buildAndSaveXML(analysis, new File( outFilePath ) );		
-	}
 	
 	public static void main( String[] args ) throws Exception {
+		
+		printRuntimeInfo();
 		
 		if( args.length < 1 || args[ 0 ].equals( "-h" ) ) {
 			printHelp();
@@ -220,8 +198,8 @@ public class MainProgram {
         /*
          * Run the conversion
          */
-        MainProgram mp = new MainProgram();
-        mp.convertSearch( pepXMLFilePath,
+        ConverterRunner cr = new ConverterRunner();
+        cr.runConversion( pepXMLFilePath,
         		          outFilePath,
         		          fastaFilePath,
         		          kojakConfFilePaths,
@@ -245,6 +223,32 @@ public class MainProgram {
 			
 		} catch ( Exception e ) {
 			System.out.println( "Error printing help." );
+		}
+	}
+	
+	/**
+	 * Print runtime info to STD ERR
+	 * @throws Exception 
+	 */
+	public static void printRuntimeInfo() throws Exception {
+
+		try( BufferedReader br = new BufferedReader( new InputStreamReader( MainProgram.class.getResourceAsStream( "run.txt" ) ) ) ) {
+
+			String line = null;
+			while ( ( line = br.readLine() ) != null ) {
+
+				line = line.replace( "{{URL}}", ConverterConstants.CONVERSION_PROGRAM_URI );
+				line = line.replace( "{{VERSION}}", ConverterConstants.CONVERSION_PROGRAM_VERSION );
+
+				System.err.println( line );
+				
+			}
+			
+			System.err.println( "" );
+
+		} catch ( Exception e ) {
+			System.out.println( "Error printing runtime information." );
+			throw e;
 		}
 	}
 }
