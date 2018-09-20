@@ -43,6 +43,10 @@ public class KojakConfReader {
 			while( line != null ) {
 				
 				String[] fields = line.split( "\\s+" );
+
+				if( fields.length < 1 ) {
+					continue;
+				}
 				
 				if( fields[ 0 ].equals( "mono_link" ) && fields[ 1 ].equals( "=" ) ) {
 					this.monolinkMasses.add( new BigDecimal( fields[ fields.length - 1 ] ) );
