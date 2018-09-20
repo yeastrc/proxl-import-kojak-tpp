@@ -45,6 +45,7 @@ public class KojakConfReader {
 				String[] fields = line.split( "\\s+" );
 
 				if( fields.length < 1 ) {
+					line = br.readLine();
 					continue;
 				}
 				
