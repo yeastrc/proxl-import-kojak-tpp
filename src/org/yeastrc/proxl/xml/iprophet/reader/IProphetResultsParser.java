@@ -70,9 +70,9 @@ public class IProphetResultsParser {
 								// get our result
 								IProphetResult result = getResult( runSummary, spectrumQuery, searchHit );
 								
-								// skip if the probability is 0 (another way to check for decoys)
-								if( result.getInterProphetScore().compareTo( new BigDecimal( "0" ) ) == 0  )
-									continue;
+//								// skip if the probability is 0 (another way to check for decoys)
+//								if( result.getInterProphetScore().compareTo( new BigDecimal( "0" ) ) == 0  )
+//									continue;
 								
 								// get our reported peptide
 								IProphetReportedPeptide reportedPeptide = getReportedPeptide( searchHit, analysis );
