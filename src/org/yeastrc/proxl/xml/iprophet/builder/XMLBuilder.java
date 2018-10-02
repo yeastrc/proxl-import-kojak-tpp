@@ -78,10 +78,11 @@ public class XMLBuilder {
 
 	/**
 	 * Build and save the XML document based on the analysis results.
-	 * 
-	 * @param analysis The analysis
-	 * @param outfile The file into which to write the XML
-	 * @param linkerName The name of the linker 'e.g., dss'
+	 *
+	 * @param analysis
+	 * @param resultsByReportedPeptide
+	 * @param errorAnalysis
+	 * @param outfile
 	 * @throws Exception
 	 */
 	public void buildAndSaveXML(
@@ -123,7 +124,7 @@ public class XMLBuilder {
 		// add interprophet
 		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
 		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
-		searchProgram.setVersion( PepXMLUtils.getVersion( analysis ) );
+		searchProgram.setVersion( PepXMLUtils.getTPPVersion( analysis ) );
 
 		{
 			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
@@ -153,7 +154,7 @@ public class XMLBuilder {
 		
 		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET );
 		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET  );
-		searchProgram.setVersion( PepXMLUtils.getVersion( analysis ) );
+		searchProgram.setVersion( PepXMLUtils.getTPPVersion( analysis ) );
 		
 		{
 			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
@@ -172,7 +173,7 @@ public class XMLBuilder {
 		
 		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
 		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK  );
-		searchProgram.setVersion( "Unknown" );
+		searchProgram.setVersion( PepXMLUtils.getKojakVersionFromXML( analysis.getAnalysis() ) );
 		
 		{
 			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();

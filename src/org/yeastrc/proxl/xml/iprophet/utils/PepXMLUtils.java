@@ -3,6 +3,7 @@ package org.yeastrc.proxl.xml.iprophet.utils;
 import java.util.Collection;
 import java.util.regex.Pattern;
 
+import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis;
 import org.yeastrc.proxl.xml.iprophet.constants.IProphetConstants;
 import org.yeastrc.proxl.xml.iprophet.reader.IProphetAnalysis;
 
@@ -59,7 +60,31 @@ public class PepXMLUtils {
 		throw new Exception( "Unknown link type in pepxml: " + searchHit.getXlinkType() );
 		
 	}
-	
+
+	/**
+	 * Attempt to get the comet version from the pepXML file. Returns "Unknown" if not found.
+	 *
+	 * @param msAnalysis
+	 * @return
+	 */
+	public static String getKojakVersionFromXML(MsmsPipelineAnalysis msAnalysis ) {
+
+		for( MsmsPipelineAnalysis.MsmsRunSummary runSummary : msAnalysis.getMsmsRunSummary() ) {
+			for( MsmsPipelineAnalysis.MsmsRunSummary.SearchSummary searchSummary : runSummary.getSearchSummary() ) {
+
+				if( 	searchSummary.getSearchEngine() != null &&
+						searchSummary.getSearchEngine().value() != null &&
+						searchSummary.getSearchEngine().value().equals( "Kojak" ) ) {
+
+					return searchSummary.getSearchEngineVersion();
+				}
+
+			}
+		}
+
+		return "Unknown";
+	}
+
 	/**
 	 * Get the version number associated with this interprophet search
 	 * 
@@ -67,7 +92,7 @@ public class PepXMLUtils {
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getVersion( IProphetAnalysis analysis ) throws Exception {
+	public static String getTPPVersion(IProphetAnalysis analysis ) throws Exception {
 		
 		String version = "Unknown";
 		
