@@ -478,12 +478,16 @@ public class XMLBuilder {
 			
 		}// end iterating over distinct reported peptides
 
-		
-		// gather up the names of all referenced proteins
-		Collection<String> proteinNames = IProphetProteinNameCollector.getInstance().getProteinNames( analysis );
-		this.buildMatchedProteinsElement( proxlInputRoot, proteinNames, peptides, fastaFile, analysis.getDecoyIdentifiers() );
-		
-		
+
+
+		// add in the matched proteins section
+		MatchedProteinsBuilder.getInstance().buildMatchedProteins(
+				proxlInputRoot,
+				fastaFile,
+				peptides,
+				analysis.getDecoyIdentifiers()
+		);
+
 		// add in the config file(s)
 		ConfigurationFiles xmlConfigurationFiles = new ConfigurationFiles();
 		proxlInputRoot.setConfigurationFiles( xmlConfigurationFiles );
@@ -501,134 +505,5 @@ public class XMLBuilder {
 		CreateImportFileFromJavaObjectsMain.getInstance().createImportFileFromJavaObjectsMain(outfile, proxlInputRoot);
 		
 	}
-	
-	
-	/**
-	 * Build and put in the MatchedProteins element in the XML document.
-	 * 
-	 * @param proxlInput
-	 * @param proteinNames
-	 * @param peptides
-	 * @param fastaFile
-	 * @throws Exception
-	 */
-	private void buildMatchedProteinsElement( ProxlInput proxlInput, Collection<String> proteinNames, Collection<String> peptides, File fastaFile, Collection<String> decoyStrings ) throws Exception {
-		
-		Collection<String> sequences = new HashSet<>();
-		
-		MatchedProteins xmlMatchedProteins = new MatchedProteins();
-		proxlInput.setMatchedProteins( xmlMatchedProteins );
-		
-		// iterate over FASTA file, add entries for proteins IDed in the search
-		
-		FASTAReader reader = null;
-		
-		try {
-			reader = FASTAReader.getInstance( fastaFile );
-		
-	        FASTAEntry entry = reader.readNext();
-	        while( entry != null ) {
-	
-	        	// if this is a decoy entry, skip it
-	        	if( isDecoyFastaEntry( entry, decoyStrings ) ) {
-	        		
-	        		// get the next entry in the FASTA file
-		            entry = reader.readNext();
-	        		continue;
-	        	}
-	        	
-	        	boolean includeThisEntry = false;
-	        	
-	            for( FASTAHeader header : entry.getHeaders() ) {
-	                for( String proteinName : proteinNames ) {
-	                	
-	                	// using startsWith instead of equals, since names in the results
-	                	// may be truncated.
-	                	if( header.getName().startsWith( proteinName ) ) {
-	                		includeThisEntry = true;
-	                		break;
-	                	}
-	                }
-	                
-	                if( includeThisEntry ) break;
-	            }
-	
-	            if( includeThisEntry ) {
-	            	Protein xmlProtein = new Protein();
-	            	xmlMatchedProteins.getProtein().add( xmlProtein );
-	            	
-	            	xmlProtein.setSequence( entry.getSequence() );
-	            	sequences.add( entry.getSequence() );
-	            	
-	            	for( FASTAHeader header : entry.getHeaders() ) {
-	            		
-	            		ProteinAnnotation xmlProteinAnnotation = new ProteinAnnotation();
-	            		xmlProtein.getProteinAnnotation().add( xmlProteinAnnotation );
-	            		
-	            		if( header.getDescription() != null )
-	            			xmlProteinAnnotation.setDescription( header.getDescription() );
-	            		
-	            		xmlProteinAnnotation.setName( header.getName() );
-	            		
-	            		Integer taxId = GetTaxonomyId.getInstance().getTaxonomyId( header.getName(), header.getDescription() );
-	            		
-	            		if( taxId != null )
-	            			xmlProteinAnnotation.setNcbiTaxonomyId( BigInteger.valueOf( taxId ) );
-	            	}
-	            }
-	           
-	
-	            // get the next entry in the FASTA file
-	            entry = reader.readNext();
-	        }
-		} finally {
-			
-			if( reader != null ) {
-				reader.close();
-				reader = null;
-			}
-			
-		}
-        
-        // ensure each peptides if found in at least one of the matched proteins' sequences
-        for( String peptide : peptides ) {
-        	boolean found = false;
-        	for( String protein : sequences ) {
-        		if( protein.toLowerCase().contains( peptide.toLowerCase() ) ) {
-        			found = true;
-        			break;
-        		}
-        	}
-        	
-        	if( !found )
-        		throw new Exception( "Could not find peptide sequence (" + peptide + ") in any matched protein..." );
-        }
-
-	}
-	
-	/**
-	 * Return true if the supplied FASTA entry is a decoy entry. False otherwise.
-	 * An entry is considered a decoy if any of the supplied decoy identifiers are present
-	 * anywhere in the header name.
-	 * 
-	 * @param entry
-	 * @param decoyIdentifiers
-	 * @return
-	 */
-	private boolean isDecoyFastaEntry( FASTAEntry entry, Collection<String> decoyIdentifiers ) {
-
-		for( String decoyId : decoyIdentifiers ) {			
-			for( FASTAHeader header : entry.getHeaders() ) {
-
-				if( header.getName().contains( decoyId ) )
-					return true;
-				
-			}
-			
-		}
-		
-		return false;
-	}
-	
 	
 }
