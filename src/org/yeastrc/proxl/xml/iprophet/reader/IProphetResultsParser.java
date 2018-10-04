@@ -70,10 +70,6 @@ public class IProphetResultsParser {
 								// get our result
 								IProphetResult result = getResult( runSummary, spectrumQuery, searchHit );
 								
-//								// skip if the probability is 0 (another way to check for decoys)
-//								if( result.getInterProphetScore().compareTo( new BigDecimal( "0" ) ) == 0  )
-//									continue;
-								
 								// get our reported peptide
 								IProphetReportedPeptide reportedPeptide = getReportedPeptide( searchHit, analysis );
 								
@@ -81,8 +77,7 @@ public class IProphetResultsParser {
 									results.put( reportedPeptide, new ArrayList<IProphetResult>() );
 								
 								results.get( reportedPeptide ).add( result );
-								
-								
+
 								/*
 								 * Kojak reports leucine/isoleucine variations as individual peptide matches in its results
 								 * file as tied as rank 1 hits to a spectrum. This is preferred by proxl, however, peptideprophet
@@ -577,11 +572,12 @@ public class IProphetResultsParser {
 				
 		return peptide;
 	}
-	
+
 	/**
 	 * Get the IProphetPeptide from the searchHit. Includes the peptide sequence and any mods.
-	 * 
-	 * @param searchHit
+	 *
+	 * @param linkedPeptide
+	 * @param analysis
 	 * @return
 	 * @throws Exception
 	 */
