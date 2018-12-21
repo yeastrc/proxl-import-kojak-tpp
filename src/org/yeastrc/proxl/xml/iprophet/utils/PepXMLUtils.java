@@ -76,13 +76,17 @@ public class PepXMLUtils {
 						searchSummary.getSearchEngine().value() != null &&
 						searchSummary.getSearchEngine().value().equals( "Kojak" ) ) {
 
-					return searchSummary.getSearchEngineVersion();
+					String version = searchSummary.getSearchEngineVersion();
+
+					if( version != null ) { return version; }
+
+					return "Unknown";	// return Unknown if version can't be found
 				}
 
 			}
 		}
 
-		return "Unknown";
+		return "Unknown"; // return Unknown if version can't be found
 	}
 
 	/**
