@@ -41,6 +41,7 @@ public class MainProgram {
 		CmdLineParser.Option fastaOpt = cmdLineParser.addStringOption( 'f', "fasta-file" );
 		CmdLineParser.Option linkerOpt = cmdLineParser.addStringOption( 'l', "linker-name" );
 		CmdLineParser.Option decoyOpt = cmdLineParser.addStringOption( 'd', "decoy-string" );
+		CmdLineParser.Option verboseOpt = cmdLineParser.addBooleanOption('v', "verbose");
 		CmdLineParser.Option importFilterCutoffOpt = cmdLineParser.addStringOption( 'i', "import-filter" );
 
         // parse command line options
@@ -181,6 +182,12 @@ public class MainProgram {
 	        }
         }
 
+        /*
+         * parse requested verbosity level
+         */
+		Boolean verboseErrorsRequested = (Boolean)cmdLineParser.getOptionValue(verboseOpt);
+		if(verboseErrorsRequested == null)
+			verboseErrorsRequested = false;
         
         System.err.println( "Converting pepXML to ProXL XML with the following parameters:" );
         System.err.println( "\tpepXML path: " + pepXMLFilePath );
@@ -212,6 +219,10 @@ public class MainProgram {
         } catch( Throwable t ) {
 
         	System.err.println( "Got error during conversion: " + t.getMessage() );
+
+			if(verboseErrorsRequested) {
+				t.printStackTrace();
+			}
 
         }
 
