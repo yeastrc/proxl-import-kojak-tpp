@@ -30,6 +30,7 @@ import org.yeastrc.proxl.xml.iprophet.constants.KojakConstants;
 import org.yeastrc.proxl.xml.iprophet.objects.IProphetPeptide;
 import org.yeastrc.proxl.xml.iprophet.objects.IProphetReportedPeptide;
 import org.yeastrc.proxl.xml.iprophet.objects.IProphetResult;
+import org.yeastrc.proxl.xml.iprophet.utils.KojakUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.ModUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.PepXMLUtils;
 import org.yeastrc.proxl.xml.iprophet.utils.ScanParsingUtils;
@@ -553,7 +554,7 @@ public class IProphetResultsParser {
 				int position = mam.getPosition().intValue();
 				String residue = peptide.getSequence().substring( position - 1, position );
 				
-				double massDifferenceDouble = mam.getMass() - KojakConstants.AA_MASS.get( residue );
+				double massDifferenceDouble = mam.getMass() - KojakUtils.getResidueMass( residue );
 				BigDecimal massDifference = BigDecimal.valueOf( massDifferenceDouble );
 				massDifference = massDifference.setScale( 6, BigDecimal.ROUND_HALF_UP );
 
@@ -600,7 +601,7 @@ public class IProphetResultsParser {
 				int position = mam.getPosition().intValue();
 				String residue = peptide.getSequence().substring( position - 1, position );
 				
-				double massDifferenceDouble = mam.getMass() - KojakConstants.AA_MASS.get( residue );
+				double massDifferenceDouble = mam.getMass() - KojakUtils.getResidueMass( residue );
 				BigDecimal massDifference = BigDecimal.valueOf( massDifferenceDouble );
 				massDifference = massDifference.setScale( 6, BigDecimal.ROUND_HALF_UP );
 
