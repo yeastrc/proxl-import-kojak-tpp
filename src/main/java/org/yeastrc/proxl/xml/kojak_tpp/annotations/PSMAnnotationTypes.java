@@ -84,7 +84,7 @@ public class PSMAnnotationTypes {
 	}
 	
 	/**
-	 * Get the list of descriptive (non-filterable) PSM annotation types in StavroX data
+	 * Get the list of descriptive (non-filterable) PSM annotation types in Kojak data
 	 * @return
 	 */
 	public static List<DescriptivePsmAnnotationType> getDescriptivePsmAnnotationTypes( String programName ) {
