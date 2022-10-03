@@ -1,26 +1,5 @@
-Kojak + TPP to Proxl XML Converter
-==================================
-
-Use this program to convert the results of a Kojak + Trans Proteomic Pipeline (TPP)
-cross-linking analysis to Proxl XML suitable for import into the proxl web application.
-
-How To Run
--------------
-1. Download the [latest release](https://github.com/yeastrc/proxl-import-kojak-tpp/releases).
-2. Run the program ``java -jar kojakTPPToProxl.jar`` with no arguments to see the possible parameters.
-
-For more information on importing data into Proxl, please see the [Proxl Import Documentation](http://proxl-web-app.readthedocs.io/en/latest/using/upload_data.html).
-
-More Information About Proxl
------------------------------
-For more information about Proxl, visit http://proxl-ms.org/.
-
-
-Command line documentation
----------------------------
-
 Usage:
-  java -jar kojakTPPToProxl.jar -x pepXML file path -o output file path
+  java -jar iProphet2Proxl.jar -x pepXML file path -o output file path
                                -f fasta file path -l linker name
                                -k kojak conf file [-k kojak conf file...]
                                -d decoy string [-d decoy string...]
@@ -51,13 +30,15 @@ Usage:
                             All protein names containing any of the
                             given decoy strings will be considered
                             decoy hits.
+                            
+     -i or --import-filter: Optional. Only PSMs with an error <= this
+                            value will be imported into ProXL. Default
+                            is 0.05. Set to 1 or more to disable
+                            import filtering.
  
  Example:
  
-  java -jar kojakTPPToProxl.jar -x ./results.pep.xml -o ./results.proxl.xml
-  -f /data/mass_spec/yeast.fa -l dss -k ./kojak1.conf -k ./kojak2.conf
+  java -jar iProphet2Proxl.jar -x ./results.pep.xml -o ./results.proxl.xml\
+  -f /data/mass_spec/yeast.fa -l dss -k ./kojak1.conf -k ./kojak2.conf\
   -d random -d rand1 -d rand0
-
-  More information: https://github.com/yeastrc/proxl-import-iprophet
-
   

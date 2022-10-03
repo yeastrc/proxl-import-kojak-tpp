@@ -1,0 +1,69 @@
+/*
+    Build executable jar file with gradle shadowJar
+    More info at: https://imperceptiblethoughts.com/shadow/
+    
+    Requires Gradle 5+
+ */
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '5.0.0'
+}
+
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+
+    maven {
+        url 'https://raw.github.com/yeastrc/proxl-import-api/repository/'
+    }
+
+    maven {
+        url 'https://raw.github.com/yeastrc/pepxml-parsing-jaxb-libs/repository/'
+    }
+    maven {
+        url 'https://raw.github.com/yeastrc/java-fasta-utils/repository/'
+    }
+
+    maven {
+        url 'https://raw.github.com/yeastrc/fasta-taxonomy-lookup-utils/repository/'
+    }
+
+}
+
+dependencies {
+    compile 'info.picocli:picocli:4.0.0-alpha-1'
+    compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'org.yeastrc:proxl-import-api:1.9.1'
+    compile 'org.yeastrc:yrc-fasta-utils:2.0.2'
+    compile 'org.yeastrc:yrc-pepxml-jaxb:1.22.2'
+    compile 'org.yeastrc:yrc-fasta-taxonomy-lookup-utils:1.0.1'
+
+    // JAXB dependencies (Required for Java 11+)
+    // https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api
+    implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '2.3.2'
+    // https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime
+    implementation group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '2.3.2'
+}
+
+processResources {
+    from ('src/main/java') {
+        include '**/*.txt'
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.yeastrc.proxl.xml.kojak_tpp.main.MainProgram'
+    }
+}
+
+shadowJar {
+    baseName = 'kojakTPPToProxl'
+    classifier = null
+    version = null
+}
