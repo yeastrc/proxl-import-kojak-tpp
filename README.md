@@ -19,45 +19,48 @@ For more information about Proxl, visit http://proxl-ms.org/.
 Command line documentation
 ---------------------------
 
-Usage:
-  java -jar kojakTPPToProxl.jar -x pepXML file path -o output file path
-                               -f fasta file path -l linker name
-                               -k kojak conf file [-k kojak conf file...]
-                               -d decoy string [-d decoy string...]
-  
- Options:
-  
-     -x or --pepxml       : Required. The full path to the pepXML file
-     
-     -o or --out-file     : Required. Full path (including file name) to which
-                            to write the Proxl XML
-  
-     -k or --kojak-conf   : Required. Full path to kojak configuration files
-                            used to generate the Kojak results. More than one
-                            may be specified using multiple -k paramters.
-                          
-     -f or --fasta-file   : Required. Full path to the fasta file used in
-                            the search.
-                          
-     -l or --linker-name  : Required. The name of the linker (e.g., edc or dss)
-                            used in the experiment.
-                           
-     -d or --decoy-string : Optional. The string to use to identify decoy
-                            protein matches. For example decoy, random,
-                            or reversed. If option is not present, all hits
-                            are assumed to be targets. May be specified
-                            multiple times with multiple -d parameters.
-                            
-                            All protein names containing any of the
-                            given decoy strings will be considered
-                            decoy hits.
+```
+java -jar kojakTPPToProxl.jar [-hvV] -f=<fastaFile> [-i=<importFilterCutoff>]
+                              -o=<outFile> -x=<pepXMLFile>
+                              [-d=<decoyString>]... -k=<kojakConfFiles>
+                              [-k=<kojakConfFiles>]...
+
+Description:
+
+Convert the results of a Kojak + TPP analysis to a ProXL XML file suitable for
+import into ProXL.
+
+More info at: https://github.com/yeastrc/proxl-import-iprophet
+
+Options:
+  -x, --pepxml=<pepXMLFile>  The full path to the pepXML file.
+  -k, --kojak-conf=<kojakConfFiles>
+                             The full path to a Kojak configuration (params) file.
+                               Use multiple times to specify multiple files.
+  -f, --fasta-file=<fastaFile>
+                             The full path to the FASTA file used for the search.
+  -o, --out-file=<outFile>   Full path to use for the ProXL XML output file
+                               (including file name).
+  -d, --decoy-string=<decoyString>
+                             [Optional] The string to use to identify decoy protein
+                               matches. For example decoy, random, or reversed. If
+                               option is not present, all hits are assumed to be
+                               targets. May be specified multiple times with
+                               multiple -d parameters.
+  -i, --import-filter=<importFilterCutoff>
+                             [Optional] Only PSMs with an error <= this value will
+                               be imported into ProXL. Default is 0.05. Set to 1 or
+                               more to disable import filtering.
+  -v, --verbose              [Optional] If present, complete error messages will be
+                               printed. Useful for debugging errors.
+  -h, --help                 Show this help message and exit.
+  -V, --version              Print version information and exit.
+```
  
  Example:
  
-  java -jar kojakTPPToProxl.jar -x ./results.pep.xml -o ./results.proxl.xml
-  -f /data/mass_spec/yeast.fa -l dss -k ./kojak1.conf -k ./kojak2.conf
-  -d random -d rand1 -d rand0
-
-  More information: https://github.com/yeastrc/proxl-import-iprophet
+  `java -jar kojakTPPToProxl.jar -x ./results.pep.xml -o ./results.proxl.xml
+  -f /data/mass_spec/yeast.fa -k ./kojak1.conf -k ./kojak2.conf
+  -d random -d rand1 -d rand0`
 
   
