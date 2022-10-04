@@ -386,6 +386,15 @@ public class XMLBuilder {
 						
 					}
 				}
+
+				if(rp.getPeptide1().getIsotopeLabel() != null) {
+					Peptide.PeptideIsotopeLabels xPeptideIsotopeLabels = new Peptide.PeptideIsotopeLabels();
+					xmlPeptide.setPeptideIsotopeLabels(xPeptideIsotopeLabels);
+
+					Peptide.PeptideIsotopeLabels.PeptideIsotopeLabel xPeptideIsotopeLabel = new Peptide.PeptideIsotopeLabels.PeptideIsotopeLabel();
+					xPeptideIsotopeLabel.setLabel(rp.getPeptide1().getIsotopeLabel());
+					xPeptideIsotopeLabels.setPeptideIsotopeLabel(xPeptideIsotopeLabel);
+				}
 				
 			}
 			
@@ -427,6 +436,15 @@ public class XMLBuilder {
 					LinkedPosition xmlLinkedPosition = new LinkedPosition();
 					xmlLinkedPositions.getLinkedPosition().add( xmlLinkedPosition );
 					xmlLinkedPosition.setPosition( new BigInteger( String.valueOf( rp.getPosition2() ) ) );
+				}
+
+				if(rp.getPeptide2().getIsotopeLabel() != null) {
+					Peptide.PeptideIsotopeLabels xPeptideIsotopeLabels = new Peptide.PeptideIsotopeLabels();
+					xmlPeptide.setPeptideIsotopeLabels(xPeptideIsotopeLabels);
+
+					Peptide.PeptideIsotopeLabels.PeptideIsotopeLabel xPeptideIsotopeLabel = new Peptide.PeptideIsotopeLabels.PeptideIsotopeLabel();
+					xPeptideIsotopeLabel.setLabel(rp.getPeptide2().getIsotopeLabel());
+					xPeptideIsotopeLabels.setPeptideIsotopeLabel(xPeptideIsotopeLabel);
 				}
 			}
 			
@@ -534,7 +552,8 @@ public class XMLBuilder {
 				proxlInputRoot,
 				fastaFile,
 				peptides,
-				analysis.getDecoyIdentifiers()
+				analysis.getDecoyIdentifiers(),
+				analysis.getKojakConfReader().getFilter15N()
 		);
 
 		// add in the config file(s)

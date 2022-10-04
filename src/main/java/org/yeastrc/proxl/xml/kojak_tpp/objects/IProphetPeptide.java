@@ -42,6 +42,10 @@ public class IProphetPeptide {
 				}
 			}
 		}
+
+		if(this.getIsotopeLabel() != null) {
+			str += "-" + this.getIsotopeLabel();
+		}
 		
 		return str;
 	}
@@ -66,9 +70,16 @@ public class IProphetPeptide {
 		this.targetProteins = targetProteins;
 	}
 
+	public String getIsotopeLabel() {
+		return isotopeLabel;
+	}
+
+	public void setIsotopeLabel(String isotopeLabel) {
+		this.isotopeLabel = isotopeLabel;
+	}
 
 	private String sequence;
 	private Map<Integer, Collection<BigDecimal>> modifications;
 	private Collection<String> targetProteins;
-	
+	private String isotopeLabel;
 }

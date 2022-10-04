@@ -4,7 +4,6 @@ import org.yeastrc.proteomics.fasta.FASTAEntry;
 import org.yeastrc.proteomics.fasta.FASTAFileParser;
 import org.yeastrc.proteomics.fasta.FASTAFileParserFactory;
 import org.yeastrc.proteomics.fasta.FASTAHeader;
-import org.yeastrc.proxl.xml.kojak_tpp.utils.ReportedPeptideParsingUtils;
 import org.yeastrc.proxl_import.api.xml_dto.MatchedProteins;
 import org.yeastrc.proxl_import.api.xml_dto.Protein;
 import org.yeastrc.proxl_import.api.xml_dto.ProteinAnnotation;
@@ -39,7 +38,7 @@ public class MatchedProteinsBuilder {
 	 * @param fastaFile
 	 * @throws Exception
 	 */
-	public void buildMatchedProteins(ProxlInput limelightInputRoot, File fastaFile, Collection<String> reportedPeptides, Collection<String> decoyPrefixes ) throws Exception {
+	public void buildMatchedProteins(ProxlInput limelightInputRoot, File fastaFile, Collection<String> reportedPeptides, Collection<String> decoyPrefixes, String isotopeLabel ) throws Exception {
 		
 		System.err.print( " Matching peptides to proteins..." );
 
@@ -50,7 +49,7 @@ public class MatchedProteinsBuilder {
 		Map<String, Collection<FastaProteinAnnotation>> proteins = getProteins( nakedPeptideObjects, fastaFile, decoyPrefixes );
 		
 		// create the XML and add to root element
-		buildAndAddMatchedProteinsToXML( limelightInputRoot, proteins );
+		buildAndAddMatchedProteinsToXML( limelightInputRoot, proteins, isotopeLabel );
 		
 	}
 	
@@ -63,7 +62,7 @@ public class MatchedProteinsBuilder {
 			
 			PeptideObject nakedPeptideObject = new PeptideObject();
 			nakedPeptideObject.setFoundMatchingProtein( false );
-			nakedPeptideObject.setPeptideSequence( ReportedPeptideParsingUtils.parsePeptide( reportedPeptide ).getNakedSequence() );
+			nakedPeptideObject.setPeptideSequence( reportedPeptide );
 			
 			nakedPeptideObjects.add( nakedPeptideObject );
 		}
@@ -86,7 +85,7 @@ public class MatchedProteinsBuilder {
 	 * @param proteins
 	 * @throws Exception
 	 */
-	private void buildAndAddMatchedProteinsToXML( ProxlInput limelightInputRoot, Map<String, Collection<FastaProteinAnnotation>> proteins ) throws Exception {
+	private void buildAndAddMatchedProteinsToXML( ProxlInput limelightInputRoot, Map<String, Collection<FastaProteinAnnotation>> proteins, String isotopeLabel ) throws Exception {
 		
 		MatchedProteins xmlMatchedProteins = new MatchedProteins();
 		limelightInputRoot.setMatchedProteins( xmlMatchedProteins );
@@ -94,24 +93,68 @@ public class MatchedProteinsBuilder {
 		for( String sequence : proteins.keySet() ) {
 			
 			if( proteins.get( sequence ).isEmpty() ) continue;
-			
-			Protein xmlProtein = new Protein();
-        	xmlMatchedProteins.getProtein().add( xmlProtein );
-        	
-        	xmlProtein.setSequence( sequence );
-        	        	
-        	for( FastaProteinAnnotation anno : proteins.get( sequence ) ) {
-        		ProteinAnnotation xmlMatchedProteinLabel = new ProteinAnnotation();
-        		xmlProtein.getProteinAnnotation().add( xmlMatchedProteinLabel );
-        		
-        		xmlMatchedProteinLabel.setName( anno.getName() );
-        		
-        		if( anno.getDescription() != null )
-        			xmlMatchedProteinLabel.setDescription( anno.getDescription() );
-        			
-        		if( anno.getTaxonomyId() != null )
-        			xmlMatchedProteinLabel.setNcbiTaxonomyId( new BigInteger( anno.getTaxonomyId().toString() ) );
-        	}
+
+			Collection<FastaProteinAnnotation> normalAnnotations = new HashSet<>();
+			Collection<FastaProteinAnnotation> isotopeLabelAnnotations = new HashSet<>();
+
+			for( FastaProteinAnnotation anno : proteins.get( sequence ) ) {
+
+				if(isotopeLabel != null && anno.getName() != null && anno.getName().startsWith(isotopeLabel)) {
+					isotopeLabelAnnotations.add(anno);
+				} else {
+					normalAnnotations.add(anno);
+				}
+			}
+
+			if(normalAnnotations.size() > 0) {
+				Protein xmlProtein = new Protein();
+				xmlMatchedProteins.getProtein().add( xmlProtein );
+
+				xmlProtein.setSequence( sequence );
+
+				for( FastaProteinAnnotation anno : normalAnnotations ) {
+
+					ProteinAnnotation xmlMatchedProteinLabel = new ProteinAnnotation();
+					xmlProtein.getProteinAnnotation().add( xmlMatchedProteinLabel );
+
+					xmlMatchedProteinLabel.setName( anno.getName() );
+
+					if( anno.getDescription() != null )
+						xmlMatchedProteinLabel.setDescription( anno.getDescription() );
+
+					if( anno.getTaxonomyId() != null )
+						xmlMatchedProteinLabel.setNcbiTaxonomyId( new BigInteger( anno.getTaxonomyId().toString() ) );
+				}
+			}
+
+			if(isotopeLabelAnnotations.size() > 0) {
+				Protein xmlProtein = new Protein();
+				xmlMatchedProteins.getProtein().add( xmlProtein );
+
+				xmlProtein.setSequence( sequence );
+
+				for( FastaProteinAnnotation anno : isotopeLabelAnnotations ) {
+
+					ProteinAnnotation xmlMatchedProteinLabel = new ProteinAnnotation();
+					xmlProtein.getProteinAnnotation().add( xmlMatchedProteinLabel );
+
+					xmlMatchedProteinLabel.setName( anno.getName() );
+
+					if( anno.getDescription() != null )
+						xmlMatchedProteinLabel.setDescription( anno.getDescription() );
+
+					if( anno.getTaxonomyId() != null )
+						xmlMatchedProteinLabel.setNcbiTaxonomyId( new BigInteger( anno.getTaxonomyId().toString() ) );
+				}
+
+				Protein.ProteinIsotopeLabels xProteinIsotopeLabels = new Protein.ProteinIsotopeLabels();
+				xmlProtein.setProteinIsotopeLabels(xProteinIsotopeLabels);
+
+				Protein.ProteinIsotopeLabels.ProteinIsotopeLabel xProteinIsotopeLabel = new Protein.ProteinIsotopeLabels.ProteinIsotopeLabel();
+				xProteinIsotopeLabel.setLabel(isotopeLabel);
+				xProteinIsotopeLabels.setProteinIsotopeLabel(xProteinIsotopeLabel);
+			}
+
 		}
 	}
 

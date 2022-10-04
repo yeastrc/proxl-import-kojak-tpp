@@ -342,10 +342,29 @@ public class KojakConfReader {
 		return mods;
 	}
 
+	private String get15NFilterFromConf(InputStream is) throws Exception {
+
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+			for (String line = br.readLine(); line != null; line = br.readLine()) {
+				if(line.startsWith("15N_filter")) {
+					String[] fields = getFieldsFromKeyValuePairInConf(line);
+
+					if(fields.length != 1) {
+						throw new Exception("Got invalid syntax for 15N_filter. Got: " + line);
+					}
+					return fields[0];
+				}
+			}
+		}
+
+		return null;
+	}
+
 	private void parseFile() throws Exception {
 
 		this.linker = getCrosslinkerFromConf(this.file);
 		this.staticModifications = getStaticModificationsFromConf(new FileInputStream(this.file));
+		this.filter15N = get15NFilterFromConf(new FileInputStream(this.file));
 	}
 
 	public KojakConfCrosslinker getLinker() throws Exception {
@@ -356,14 +375,19 @@ public class KojakConfReader {
 	}
 
 	public Map<String, BigDecimal> getStaticModifications() throws Exception {
-		if( this.staticModifications == null )
+		if( this.linker == null )
 			this.parseFile();
 		
 		return staticModifications;
 	}
 
-	
-	
+	public String getFilter15N() throws Exception {
+		if( this.linker == null )
+			this.parseFile();
+
+		return filter15N;
+	}
+
 	public File getFile() {
 		return file;
 	}
@@ -373,5 +397,6 @@ public class KojakConfReader {
 	private File file;
 	private KojakConfCrosslinker linker;
 	private Map<String, BigDecimal> staticModifications;
+	private String filter15N;
 	
 }
