@@ -17,14 +17,14 @@ public class ModUtils {
 	 * @throws Exception
 	 */
 	public static boolean isMonolink( BigDecimal modMass, KojakConfReader kojakConf ) throws Exception {
-		
-		if( kojakConf.getMonolinkMasses() == null || kojakConf.getMonolinkMasses().size() < 1 )
+
+		if( kojakConf.getLinker().getMonolinkMasses() == null || kojakConf.getLinker().getMonolinkMasses().size() < 1 )
 			return false;
 		
 		
 		modMass = modMass.setScale( 3, BigDecimal.ROUND_HALF_UP );
 		
-		for( BigDecimal monolinkMass : kojakConf.getMonolinkMasses() ) {
+		for( BigDecimal monolinkMass : kojakConf.getLinker().getMonolinkMasses() ) {
 			
 			monolinkMass = monolinkMass.setScale( 3, BigDecimal.ROUND_HALF_UP );
 			

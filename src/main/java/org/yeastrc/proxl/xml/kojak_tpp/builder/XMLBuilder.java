@@ -5,6 +5,7 @@ import org.yeastrc.proxl.xml.kojak_tpp.annotations.PSMDefaultVisibleAnnotationTy
 import org.yeastrc.proxl.xml.kojak_tpp.constants.IProphetConstants;
 import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetReportedPeptide;
 import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetResult;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.KojakConfCrosslinker;
 import org.yeastrc.proxl.xml.kojak_tpp.reader.IProphetAnalysis;
 import org.yeastrc.proxl.xml.kojak_tpp.reader.TPPErrorAnalysis;
 import org.yeastrc.proxl.xml.kojak_tpp.utils.ModUtils;
@@ -12,6 +13,7 @@ import org.yeastrc.proxl.xml.kojak_tpp.utils.PepXMLUtils;
 import org.yeastrc.proxl_import.api.xml_dto.*;
 import org.yeastrc.proxl_import.api.xml_dto.SearchProgram.PsmAnnotationTypes;
 import org.yeastrc.proxl_import.create_import_file_from_java_objects.main.CreateImportFileFromJavaObjectsMain;
+import sun.awt.image.ImageWatched;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -170,19 +172,111 @@ public class XMLBuilder {
 
 		Linker linker = new Linker();
 		linkers.getLinker().add( linker );
-		
-		linker.setName( analysis.getLinkerName() );
+
+		KojakConfCrosslinker userLinker = analysis.getKojakConfReader().getLinker();
+
+		linker.setName( userLinker.getName() );
 		
 		CrosslinkMasses masses = new CrosslinkMasses();
 		linker.setCrosslinkMasses( masses );
 		
-		for( BigDecimal mass : analysis.getKojakConfReader().getCrosslinkMasses() ) {
-			CrosslinkMass xlinkMass = new CrosslinkMass();
-			linker.getCrosslinkMasses().getCrosslinkMass().add( xlinkMass );
-			
-			// set the mass for this crosslinker to the calculated mass for the crosslinker, as defined in the properties file
-			xlinkMass.setMass( mass );
+		CrosslinkMass xlinkMass = new CrosslinkMass();
+		linker.getCrosslinkMasses().getCrosslinkMass().add( xlinkMass );
+		xlinkMass.setMass(userLinker.getCrosslinkMass());
+
+		if(userLinker.getMonolinkMasses().size() > 0) {
+			MonolinkMasses xMonoLinkMasses = new MonolinkMasses();
+			linker.setMonolinkMasses(xMonoLinkMasses);
+
+			for(BigDecimal monolinkMass : userLinker.getMonolinkMasses()) {
+				MonolinkMass xMonolinkMass = new MonolinkMass();
+				xMonolinkMass.setMass(monolinkMass);
+
+				xMonoLinkMasses.getMonolinkMass().add(xMonolinkMass);
+			}
 		}
+
+		LinkedEnds xLinkedEnds = new LinkedEnds();
+		linker.setLinkedEnds(xLinkedEnds);
+
+		// linked end 1
+		{
+			LinkedEnd xLinkedEnd = new LinkedEnd();
+			xLinkedEnds.getLinkedEnd().add(xLinkedEnd);
+
+			if (userLinker.getLinkableEnd1().getLinkableResidues().size() > 0) {
+				Residues xResidues = new Residues();
+				xLinkedEnd.setResidues(xResidues);
+
+				for (String residue : userLinker.getLinkableEnd1().getLinkableResidues()) {
+					xResidues.getResidue().add(residue);
+				}
+			}
+
+			if(userLinker.getLinkableEnd1().isLinksProteinCTerminus() || userLinker.getLinkableEnd1().isLinksProteinNTerminus()) {
+				ProteinTermini xProteinTermini = new ProteinTermini();
+				xLinkedEnd.setProteinTermini(xProteinTermini);
+
+				if(userLinker.getLinkableEnd1().isLinksProteinNTerminus()) {
+					ProteinTerminus xProteinTerminus = new ProteinTerminus();
+					xProteinTerminus.setTerminusEnd(ProteinTerminusDesignation.N);
+					xProteinTerminus.setDistanceFromTerminus(BigInteger.ZERO);
+					xProteinTermini.getProteinTerminus().add(xProteinTerminus);
+
+					xProteinTerminus = new ProteinTerminus();
+					xProteinTerminus.setTerminusEnd(ProteinTerminusDesignation.N);
+					xProteinTerminus.setDistanceFromTerminus(BigInteger.ONE);
+					xProteinTermini.getProteinTerminus().add(xProteinTerminus);
+				}
+
+				if(userLinker.getLinkableEnd1().isLinksProteinCTerminus()) {
+					ProteinTerminus xProteinTerminus = new ProteinTerminus();
+					xProteinTerminus.setTerminusEnd(ProteinTerminusDesignation.C);
+					xProteinTerminus.setDistanceFromTerminus(BigInteger.ZERO);
+					xProteinTermini.getProteinTerminus().add(xProteinTerminus);
+				}
+			}
+		}
+
+		// linked end 2
+		{
+			LinkedEnd xLinkedEnd = new LinkedEnd();
+			xLinkedEnds.getLinkedEnd().add(xLinkedEnd);
+
+			if (userLinker.getLinkableEnd2().getLinkableResidues().size() > 0) {
+				Residues xResidues = new Residues();
+				xLinkedEnd.setResidues(xResidues);
+
+				for (String residue : userLinker.getLinkableEnd2().getLinkableResidues()) {
+					xResidues.getResidue().add(residue);
+				}
+			}
+
+			if(userLinker.getLinkableEnd2().isLinksProteinCTerminus() || userLinker.getLinkableEnd2().isLinksProteinNTerminus()) {
+				ProteinTermini xProteinTermini = new ProteinTermini();
+				xLinkedEnd.setProteinTermini(xProteinTermini);
+
+				if(userLinker.getLinkableEnd2().isLinksProteinNTerminus()) {
+					ProteinTerminus xProteinTerminus = new ProteinTerminus();
+					xProteinTerminus.setTerminusEnd(ProteinTerminusDesignation.N);
+					xProteinTerminus.setDistanceFromTerminus(BigInteger.ZERO);
+					xProteinTermini.getProteinTerminus().add(xProteinTerminus);
+
+					xProteinTerminus = new ProteinTerminus();
+					xProteinTerminus.setTerminusEnd(ProteinTerminusDesignation.N);
+					xProteinTerminus.setDistanceFromTerminus(BigInteger.ONE);
+					xProteinTermini.getProteinTerminus().add(xProteinTerminus);
+				}
+
+				if(userLinker.getLinkableEnd2().isLinksProteinCTerminus()) {
+					ProteinTerminus xProteinTerminus = new ProteinTerminus();
+					xProteinTerminus.setTerminusEnd(ProteinTerminusDesignation.C);
+					xProteinTerminus.setDistanceFromTerminus(BigInteger.ZERO);
+					xProteinTermini.getProteinTerminus().add(xProteinTerminus);
+				}
+			}
+		}
+
 		
 		//
 		// Define the static mods
