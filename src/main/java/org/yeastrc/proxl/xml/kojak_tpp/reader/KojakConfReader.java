@@ -234,7 +234,7 @@ public class KojakConfReader {
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
 
-				if(line.startsWith("cross_link")) {
+				if(line.startsWith("cross_link ")) {
 
 					String[] fields = getFieldsFromKeyValuePairInConf(line);
 
@@ -248,7 +248,7 @@ public class KojakConfReader {
 					linkableEnd1 = getCrosslinkerLinkableEndFromConfField(fields[0]);
 					linkableEnd2 = getCrosslinkerLinkableEndFromConfField(fields[1]);
 
-				} else if(line.startsWith("mono_link")) {
+				} else if(line.startsWith("mono_link ")) {
 
 					String[] fields = getFieldsFromKeyValuePairInConf(line);
 
