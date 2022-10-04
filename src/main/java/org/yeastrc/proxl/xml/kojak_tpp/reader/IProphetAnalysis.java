@@ -37,7 +37,6 @@ public class IProphetAnalysis {
 	private KojakConfReader kojakConfReader;
 	private File fastaFile;
 	private Collection<File> kojakConfFiles;
-	private String linkerName;
 	private BigDecimal importFilter = new BigDecimal( IProphetConstants.DEFAULT_IMPORT_CUTOFF );
 	
 	/**
@@ -84,14 +83,6 @@ public class IProphetAnalysis {
 
 	public void setKojakConfFilePaths(Collection<File> kojakConfFiles) {
 		this.kojakConfFiles = kojakConfFiles;
-	}
-
-	public String getLinkerName() {
-		return linkerName;
-	}
-
-	public void setLinkerName(String linkerName) {
-		this.linkerName = linkerName;
 	}
 
 	/**

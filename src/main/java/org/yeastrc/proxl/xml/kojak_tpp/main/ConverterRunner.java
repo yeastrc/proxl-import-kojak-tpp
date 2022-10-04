@@ -18,7 +18,6 @@ public class ConverterRunner {
             String outFilePath,
             String fastaFilePath,
             File[] kojakConfFiles,
-            String linkerName,
             String[] decoyIdentifiers,
             BigDecimal importCutoff
            ) throws Exception {
@@ -38,7 +37,6 @@ public class ConverterRunner {
 		analysis.setKojakConfReader( KojakConfReader.getInstance( kojakConfFiles[0].getAbsolutePath() ) );
 		analysis.setFastaFile( new File( fastaFilePath ) );
 		analysis.setKojakConfFilePaths( Arrays.asList(kojakConfFiles) );
-		analysis.setLinkerName( linkerName );
 		if( importCutoff != null )
 			analysis.setImportFilter( importCutoff );
 

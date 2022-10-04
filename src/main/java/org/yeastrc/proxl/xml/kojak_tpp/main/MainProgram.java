@@ -37,9 +37,6 @@ public class MainProgram implements Runnable {
 	@CommandLine.Option(names = { "-f", "--fasta-file" }, required = true, description = "The full path to the FASTA file used for the search.")
 	private File fastaFile;
 
-	@CommandLine.Option(names = { "-l", "--linker-name" }, required = true, description = "The name of the linker (e.g., edc or dss) used in the experiment.")
-	private String linkerName;
-
 	@CommandLine.Option(names = { "-o", "--out-file" }, required = true, description = "Full path to use for the ProXL XML output file (including file name).")
 	private File outFile;
 
@@ -117,7 +114,6 @@ public class MainProgram implements Runnable {
         	 System.err.println( "\t\t" + kojakConfFile.getAbsolutePath() );
         }
      
-        System.err.println( "\tlinker name: " + linkerName );
         System.err.println( "\tdecoyIdentifiers: " + StringUtils.join( decoyString, "," ) );
         
         /*
@@ -130,7 +126,6 @@ public class MainProgram implements Runnable {
 	        		          outFile.getAbsolutePath(),
 	        		          fastaFile.getAbsolutePath(),
 	        		          kojakConfFiles,
-	        		          linkerName,
 	        		          decoyString,
 	        		          importFilterCutoff
 	        		         );
