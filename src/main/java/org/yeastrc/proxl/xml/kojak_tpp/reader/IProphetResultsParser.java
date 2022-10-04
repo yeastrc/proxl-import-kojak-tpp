@@ -530,22 +530,17 @@ public class IProphetResultsParser {
 			Map<Integer, Collection<BigDecimal>> mods = new HashMap<>();
 			
 			for( ModAminoacidMass mam : modInfo.getModAminoacidMass() ) {
-				
-				int position = mam.getPosition().intValue();
-				String residue = peptide.getSequence().substring( position - 1, position );
-				
-				double massDifferenceDouble = mam.getMass() - KojakUtils.getResidueMass( residue );
-				BigDecimal massDifference = BigDecimal.valueOf( massDifferenceDouble );
-				massDifference = massDifference.setScale( 6, BigDecimal.ROUND_HALF_UP );
 
-				// don't add static mods as mods
-				if( ModUtils.isStaticMod(residue, massDifference, analysis.getKojakConfReader() ) )
-					continue;
-				
-				if( !mods.containsKey( position ) )
-					mods.put( position, new HashSet<BigDecimal>() );
-				
-				mods.get( position ).add( massDifference );				
+				if(mam.getVariable() != null) {
+
+					int position = mam.getPosition().intValue();
+					BigDecimal variableModMass = BigDecimal.valueOf(mam.getVariable());
+
+					if (!mods.containsKey(position))
+						mods.put(position, new HashSet<BigDecimal>());
+
+					mods.get(position).add(variableModMass);
+				}
 			}
 			
 			peptide.setModifications( mods );			
