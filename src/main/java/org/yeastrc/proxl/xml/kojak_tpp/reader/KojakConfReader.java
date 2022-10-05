@@ -31,7 +31,7 @@ public class KojakConfReader {
 
 	/**
 	 * Get the linkable end defined by the linkable end field of a Kojak conf file predefined linker
-	 * Example: nK or protein n-terminus and lysine
+	 * Example: nK for protein n-terminus and lysine
 	 * @param field
 	 * @return
 	 * @throws Exception
