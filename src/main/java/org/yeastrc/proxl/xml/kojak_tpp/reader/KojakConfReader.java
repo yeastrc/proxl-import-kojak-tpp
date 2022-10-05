@@ -396,6 +396,12 @@ public class KojakConfReader {
 		return linker;
 	}
 
+	/**
+	 * Get any fixed/static modifications defined in this configuration file as a Map (residue => mass diff)
+	 *
+	 * @return any fixed/static modifications defined in this configuration file as a Map (residue => mass diff)
+	 * @throws Exception If there is a problem
+	 */
 	public Map<String, BigDecimal> getStaticModifications() throws Exception {
 		if( this.linker == null )
 			this.parseFile();
@@ -403,6 +409,11 @@ public class KojakConfReader {
 		return staticModifications;
 	}
 
+	/**
+	 * Get the 15N filter defined in this configuration file if it exists.
+	 * @return the 15N filter defined in this configuration file if it exists, null if it doesn't
+	 * @throws Exception If there is a problem
+	 */
 	public String getFilter15N() throws Exception {
 		if( this.linker == null )
 			this.parseFile();
