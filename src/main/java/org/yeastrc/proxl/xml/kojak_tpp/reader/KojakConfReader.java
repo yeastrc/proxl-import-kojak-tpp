@@ -32,12 +32,12 @@ public class KojakConfReader {
 	/**
 	 * Get the linkable end defined by the linkable end field of a Kojak conf file predefined linker
 	 * Example: nK for protein n-terminus and lysine
-	 * @param field
-	 * @return
-	 * @throws Exception
+	 * @param linkablePositions The linkable positions as a string of concatenated residues: e.g., nKM
+	 * @return The linkable end object derived from parsing the input
+	 * @throws Exception If there is an error
 	 */
-	private KojakConfCrosslinkerLinkableEnd getCrosslinkerLinkableEndFromConfField(String field) throws Exception {
-		if(field.length() < 1) {
+	private KojakConfCrosslinkerLinkableEnd getCrosslinkerLinkableEndFromConfField(String linkablePositions) throws Exception {
+		if(linkablePositions.length() < 1) {
 			throw new Exception("Got empty field for a linkable end definition in kojak conf file.");
 		}
 
@@ -45,9 +45,9 @@ public class KojakConfReader {
 		boolean proteinCTerminusLinkable = false;
 		Collection<String> linkableResidues = new HashSet<>();
 
-		for (int i = 0; i < field.length(); i++) {
+		for (int i = 0; i < linkablePositions.length(); i++) {
 
-			char residue = field.charAt(i);
+			char residue = linkablePositions.charAt(i);
 
 			if(residue == 'n') {
 				proteinNTerminusLinkable = true;
@@ -64,9 +64,10 @@ public class KojakConfReader {
 	/**
 	 * Parse a line in the Kojak conf file that defines a pre-defined linker. Will be in the form of:
 	 * [ID Num] [Name] [Quenching Reagent] [Target A] [Target B] [XL Mass] [MonoMasses A] [MonoMasses B] [Cleavage_Product_Masses]
-	 * @param line
-	 * @return
-	 * @throws Exception
+	 *
+	 * @param line The line from the Kojak conf file that defines a cross-linker
+	 * @return The KojakConfCrosslinker defined by this line
+	 * @throws Exception If there is an error
 	 */
 	private KojakConfCrosslinker getCrosslinkerFromConfLine(String line) throws Exception {
 		String[] fields = line.split("\\s+");
@@ -141,10 +142,10 @@ public class KojakConfReader {
 	 * 10  PhoX     NH2+H2O   nK  nK  209.972     226.998,227.982        x  x
 	 * [END_XL_PARAMS]
 	 *
-	 * @param is
-	 * @param index
-	 * @return
-	 * @throws Exception
+	 * @param is InputStream containing the Kojak conf file contents
+	 * @param index The index of the pre-defined cross-linker
+	 * @return The KojakConfCrosslinker defined at this index in the [XL_PARAMS] section
+	 * @throws Exception If there is a problem
 	 */
 	private KojakConfCrosslinker getCrosslinkerFromConfUsingIndex(InputStream is, int index) throws Exception {
 		boolean inXLParamsSection = false;
@@ -178,9 +179,9 @@ public class KojakConfReader {
 	 * Read through the conf file and get the index of the predefined cross-linker. If none is defined
 	 * returns null.
 	 *
-	 * @param is
-	 * @return
-	 * @throws Exception
+	 * @param is The InputStream containing the Kojak conf file contents
+	 * @return The index of the pre-defined cross-linker used, if one was used. null if not.
+	 * @throws Exception If there is a problem
 	 */
 	Integer getPredefinedCrosslinkIndexFromConf(InputStream is) throws Exception {
 
@@ -201,6 +202,12 @@ public class KojakConfReader {
 		return null;
 	}
 
+	/**
+	 * Given a Kojak conf line in the form of key = value value value value # optional comment
+	 * Get all of the values to the right of the equal sign
+	 * @param line A line from the Kojak conf file
+	 * @return A string array of values on that line
+	 */
 	String[] getFieldsFromKeyValuePairInConf(String line) {
 		// strip off training comment
 		String fixed_line = line.replaceAll("\\s*#.*$", "");
@@ -220,9 +227,9 @@ public class KojakConfReader {
 	 * xl_cleavage_product_mass = 85.982635   #DSSO cleavage product mass #2
 	 * xl_cleavage_product_mass = 103.993200  #DSSO cleavage product mass #3
 	 *
-	 * @param is
-	 * @return
-	 * @throws IOException
+	 * @param is The InputStream containing the Kojak conf file contents
+	 * @return A populated KojakConfCrosslinker defined by the custom linker configuration in the Kojak conf file
+	 * @throws IOException If there is a problem
 	 */
 	private KojakConfCrosslinker getCustomDefinedCrosslinkerFromConf(InputStream is) throws Exception {
 		String name = null;
@@ -300,8 +307,8 @@ public class KojakConfReader {
 	 * cross-linker is being used. If so, always will use it. Otherwise looks for a custom-defined
 	 * cross-linker.
 	 *
-	 * @param is
-	 * @return
+	 * @param confFile The Kojak conf file
+	 * @return The populated KojakConfCrosslinker defined in the file
 	 */
 	private KojakConfCrosslinker getCrosslinkerFromConf(File confFile) throws Exception {
 
@@ -318,9 +325,9 @@ public class KojakConfReader {
 	 *
 	 * fixed_modification = C 57.02146
 	 *
-	 * @param is
-	 * @return
-	 * @throws Exception
+	 * @param is The InputStream containing the Kojak conf file contents
+	 * @return The static modifications defined in the file in the form of Map(residue => mass)
+	 * @throws Exception If there is a problem
 	 */
 	private  Map<String, BigDecimal> getStaticModificationsFromConf(InputStream is) throws Exception {
 
@@ -342,6 +349,12 @@ public class KojakConfReader {
 		return mods;
 	}
 
+	/**
+	 *
+	 * @param is The InputStream containing the Kojak conf file contents
+	 * @return The label used for the 15N filter, if any. null if none
+	 * @throws Exception If there is a problem
+	 */
 	private String get15NFilterFromConf(InputStream is) throws Exception {
 
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
@@ -360,6 +373,10 @@ public class KojakConfReader {
 		return null;
 	}
 
+	/**
+	 * Parses the file and populates instance variables with parsed data
+	 * @throws Exception If there is a problem
+	 */
 	private void parseFile() throws Exception {
 
 		this.linker = getCrosslinkerFromConf(this.file);
@@ -367,6 +384,11 @@ public class KojakConfReader {
 		this.filter15N = get15NFilterFromConf(new FileInputStream(this.file));
 	}
 
+	/**
+	 * Get the KojakConfCrosslinker defined in the conf file
+	 * @return KojakConfCrosslinker defined in the conf file
+	 * @throws Exception If there is a problem
+	 */
 	public KojakConfCrosslinker getLinker() throws Exception {
 		if( this.linker == null )
 			this.parseFile();
