@@ -350,6 +350,31 @@ public class KojakConfReader {
 	}
 
 	/**
+	 * Get the decoy prefix from the Kojak conf file.
+	 *
+	 * @param is The InputStream containing the Kojak conf file contents
+	 * @return the decoy prefix from the Kojak conf file, null if not found
+	 * @throws Exception If there is a problem
+	 */
+	private String getDecoyPrefixFromConf(InputStream is) throws Exception {
+
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+			for (String line = br.readLine(); line != null; line = br.readLine()) {
+				if(line.startsWith("decoy_filter ")) {
+					String[] fields = getFieldsFromKeyValuePairInConf(line);
+
+					if(fields.length != 2) {
+						throw new Exception("Got invalid syntax for decoy_filter. Got: " + line);
+					}
+					return fields[0];
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 *
 	 * @param is The InputStream containing the Kojak conf file contents
 	 * @return The label used for the 15N filter, if any. null if none
@@ -382,6 +407,7 @@ public class KojakConfReader {
 		this.linker = getCrosslinkerFromConf(this.file);
 		this.staticModifications = getStaticModificationsFromConf(new FileInputStream(this.file));
 		this.filter15N = get15NFilterFromConf(new FileInputStream(this.file));
+		this.decoyPrefix = getDecoyPrefixFromConf(new FileInputStream(this.file));
 	}
 
 	/**
@@ -425,11 +451,17 @@ public class KojakConfReader {
 		return file;
 	}
 
+	public String getDecoyPrefix() throws Exception {
+		if( this.linker == null )
+			this.parseFile();
 
+		return decoyPrefix;
+	}
 
 	private File file;
 	private KojakConfCrosslinker linker;
 	private Map<String, BigDecimal> staticModifications;
 	private String filter15N;
+	private String decoyPrefix;
 	
 }

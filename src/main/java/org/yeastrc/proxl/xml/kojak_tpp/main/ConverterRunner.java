@@ -28,13 +28,18 @@ public class ConverterRunner {
 		System.err.print( "Loading configuration..." );
 		
 		IProphetAnalysis analysis = IProphetAnalysis.loadAnalysis( pepXMLFilePath );
-
-		if(decoyIdentifiers == null)
-			analysis.setDecoyIdentifiers(new ArrayList<>());
-		else
-			analysis.setDecoyIdentifiers(Arrays.asList(decoyIdentifiers) );
-
 		analysis.setKojakConfReader( KojakConfReader.getInstance( kojakConfFiles[0].getAbsolutePath() ) );
+
+		if(decoyIdentifiers == null) {
+			analysis.setDecoyIdentifiers(new ArrayList<>());
+			String confDecoyPrefix = analysis.getKojakConfReader().getDecoyPrefix();
+			if(confDecoyPrefix != null) {
+				analysis.getDecoyIdentifiers().add(confDecoyPrefix);
+			}
+		} else {
+			analysis.setDecoyIdentifiers(Arrays.asList(decoyIdentifiers));
+		}
+
 		analysis.setFastaFile( new File( fastaFilePath ) );
 		analysis.setKojakConfFilePaths( Arrays.asList(kojakConfFiles) );
 		if( importCutoff != null )

@@ -40,11 +40,7 @@ public class MainProgram implements Runnable {
 	@CommandLine.Option(names = { "-o", "--out-file" }, required = true, description = "Full path to use for the ProXL XML output file (including file name).")
 	private File outFile;
 
-	@CommandLine.Option(names = { "-d", "--decoy-string" }, required = false, description = "[Optional] The string to use to identify decoy" +
-			" protein matches. For example decoy, random," +
-			" or reversed. If option is not present, all hits" +
-			" are assumed to be targets. May be specified" +
-			" multiple times with multiple -d parameters.")
+	@CommandLine.Option(names = { "-d", "--decoy-string" }, required = false, description = "[Optional] Override the value for the decoy prefix found in the Kojak conf file. May be used multiple times to specify multiple decoy strings.")
 	private String[] decoyString;
 
 	@CommandLine.Option(names = { "-i", "--import-filter" }, required = false, description = "[Optional] Only PSMs with an error <= this" +
@@ -114,7 +110,7 @@ public class MainProgram implements Runnable {
         	 System.err.println( "\t\t" + kojakConfFile.getAbsolutePath() );
         }
      
-        System.err.println( "\tdecoyIdentifiers: " + StringUtils.join( decoyString, "," ) );
+        System.err.println( "\tdecoy overrides: " + StringUtils.join( decoyString, "," ) );
         
         /*
          * Run the conversion
