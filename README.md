@@ -42,11 +42,9 @@ Options:
   -o, --out-file=<outFile>   Full path to use for the ProXL XML output file
                                (including file name).
   -d, --decoy-string=<decoyString>
-                             [Optional] The string to use to identify decoy protein
-                               matches. For example decoy, random, or reversed. If
-                               option is not present, all hits are assumed to be
-                               targets. May be specified multiple times with
-                               multiple -d parameters.
+                             [Optional] Override the value for the decoy prefix
+                               found in the Kojak conf file. May be used multiple
+                               times to specify multiple decoy strings.
   -i, --import-filter=<importFilterCutoff>
                              [Optional] Only PSMs with an error <= this value will
                                be imported into ProXL. Default is 0.05. Set to 1 or
