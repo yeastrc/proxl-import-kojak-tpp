@@ -6,8 +6,9 @@ import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.AnalysisSummary;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.Xlink.LinkedPeptide;
-import org.yeastrc.proxl.xml.kojak_tpp.constants.IProphetConstants;
-import org.yeastrc.proxl.xml.kojak_tpp.reader.IProphetAnalysis;
+import net.systemsbiology.regis_web.pepxml.PeptideprophetSummary;
+import org.yeastrc.proxl.xml.kojak_tpp.constants.TPPConstants;
+import org.yeastrc.proxl.xml.kojak_tpp.reader.TPPAnalysis;
 
 import java.util.Collection;
 import java.util.regex.Pattern;
@@ -17,7 +18,29 @@ public class PepXMLUtils {
 	public static final String XLINK_TYPE_LOOPLINK = "loop";
 	public static final String XLINK_TYPE_CROSSLINK = "xl";
 	public static final String XLINK_TYPE_UNLINKED = "na";
-	
+
+	/**
+	 * Return true if the results can be expected to have iProphet data, false otherwise.
+	 *
+	 * @param msAnalysis
+	 * @return
+	 */
+	public static boolean getHasIProphetData( MsmsPipelineAnalysis msAnalysis ) {
+
+		for( MsmsPipelineAnalysis.AnalysisSummary analysisSummary : msAnalysis.getAnalysisSummary() ) {
+
+			for( Object o : analysisSummary.getAny() ) {
+
+				if( o instanceof InterprophetSummary) {
+					return true;
+				}
+
+			}
+		}
+
+		return false;
+	}
+
 	/**
 	 * Given a peptide sequence such as PIPTLDE, return all sequences that represent
 	 * all possible combinations of leucine and isoleucine substitutions. E.g.:
@@ -45,15 +68,15 @@ public class PepXMLUtils {
 	public static int getHitType( SearchHit searchHit ) throws Exception {
 		
 		if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_CROSSLINK ) ) {
-			return IProphetConstants.LINK_TYPE_CROSSLINK;
+			return TPPConstants.LINK_TYPE_CROSSLINK;
 		}
 		
 		if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_LOOPLINK ) ) {
-			return IProphetConstants.LINK_TYPE_LOOPLINK;
+			return TPPConstants.LINK_TYPE_LOOPLINK;
 		}
 		
 		if( searchHit.getXlinkType().equals( PepXMLUtils.XLINK_TYPE_UNLINKED ) ) {
-			return IProphetConstants.LINK_TYPE_UNLINKED;
+			return TPPConstants.LINK_TYPE_UNLINKED;
 		}
 		
 		throw new Exception( "Unknown link type in pepxml: " + searchHit.getXlinkType() );
@@ -95,10 +118,15 @@ public class PepXMLUtils {
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getTPPVersion(IProphetAnalysis analysis ) throws Exception {
+	public static String getTPPVersion(TPPAnalysis analysis ) throws Exception {
 
 		for( AnalysisSummary analysisSummary : analysis.getAnalysis().getAnalysisSummary() ) {
 			for(Object elem : analysisSummary.getAny()) {
+				try {
+					String version =  ((PeptideprophetSummary)(elem)).getVersion();
+					return version;
+				} catch (Exception e ) { ; }
+
 				try {
 					String version =  ((InterprophetSummary)(elem)).getVersion();
 					return version;

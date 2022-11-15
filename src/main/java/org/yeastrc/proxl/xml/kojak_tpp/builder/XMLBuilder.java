@@ -2,18 +2,17 @@ package org.yeastrc.proxl.xml.kojak_tpp.builder;
 
 import org.yeastrc.proxl.xml.kojak_tpp.annotations.PSMAnnotationTypes;
 import org.yeastrc.proxl.xml.kojak_tpp.annotations.PSMDefaultVisibleAnnotationTypes;
-import org.yeastrc.proxl.xml.kojak_tpp.constants.IProphetConstants;
-import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetReportedPeptide;
-import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetResult;
+import org.yeastrc.proxl.xml.kojak_tpp.constants.TPPConstants;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.TPPReportedPeptide;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.TPPResult;
 import org.yeastrc.proxl.xml.kojak_tpp.objects.KojakConfCrosslinker;
-import org.yeastrc.proxl.xml.kojak_tpp.reader.IProphetAnalysis;
+import org.yeastrc.proxl.xml.kojak_tpp.reader.TPPAnalysis;
 import org.yeastrc.proxl.xml.kojak_tpp.reader.TPPErrorAnalysis;
 import org.yeastrc.proxl.xml.kojak_tpp.utils.ModUtils;
 import org.yeastrc.proxl.xml.kojak_tpp.utils.PepXMLUtils;
 import org.yeastrc.proxl_import.api.xml_dto.*;
 import org.yeastrc.proxl_import.api.xml_dto.SearchProgram.PsmAnnotationTypes;
 import org.yeastrc.proxl_import.create_import_file_from_java_objects.main.CreateImportFileFromJavaObjectsMain;
-import sun.awt.image.ImageWatched;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -38,14 +37,16 @@ public class XMLBuilder {
 	 *
 	 * @param analysis
 	 * @param resultsByReportedPeptide
-	 * @param errorAnalysis
+	 * @param pProphetErrorAnalysis
+	 * @param iProphetErrorAnalysis
 	 * @param outfile
 	 * @throws Exception
 	 */
 	public void buildAndSaveXML(
-								 IProphetAnalysis analysis,
-								 Map<IProphetReportedPeptide, Collection<IProphetResult>> resultsByReportedPeptide,
-								 TPPErrorAnalysis errorAnalysis,
+								 TPPAnalysis analysis,
+								 Map<TPPReportedPeptide, Collection<TPPResult>> resultsByReportedPeptide,
+								 TPPErrorAnalysis pProphetErrorAnalysis,
+								 TPPErrorAnalysis iProphetErrorAnalysis,
 			                     File outfile
 			                    ) throws Exception {
 
@@ -69,100 +70,87 @@ public class XMLBuilder {
 		PsmAnnotationSortOrder psmAnnotationSortOrder = new PsmAnnotationSortOrder();
 		annotationSortOrder.setPsmAnnotationSortOrder( psmAnnotationSortOrder );
 		
-		psmAnnotationSortOrder.getSearchAnnotation().addAll( org.yeastrc.proxl.xml.kojak_tpp.annotations.PSMAnnotationTypeSortOrder.getPSMAnnotationTypeSortOrder() );
+		psmAnnotationSortOrder.getSearchAnnotation().addAll( org.yeastrc.proxl.xml.kojak_tpp.annotations.PSMAnnotationTypeSortOrder.getPSMAnnotationTypeSortOrder(analysis.getHasIProphetData()) );
 		
 		
 		SearchPrograms searchPrograms = new SearchPrograms();
 		searchProgramInfo.setSearchPrograms( searchPrograms );
-		
-		SearchProgram searchProgram = new SearchProgram();
-		searchPrograms.getSearchProgram().add( searchProgram );
-		
-		// add interprophet
-		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
-		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
-		searchProgram.setVersion( PepXMLUtils.getTPPVersion( analysis ) );
 
+		// add interprophet
+		if(analysis.getHasIProphetData()) {
+
+			SearchProgram searchProgram = new SearchProgram();
+			searchPrograms.getSearchProgram().add( searchProgram );
+		
+			searchProgram.setName(TPPConstants.SEARCH_PROGRAM_NAME_IPROPHET);
+			searchProgram.setDisplayName(TPPConstants.SEARCH_PROGRAM_NAME_IPROPHET);
+			searchProgram.setVersion(PepXMLUtils.getTPPVersion(analysis));
+
+			{
+				PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
+				searchProgram.setPsmAnnotationTypes(psmAnnotationTypes);
+
+				FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
+				psmAnnotationTypes.setFilterablePsmAnnotationTypes(filterablePsmAnnotationTypes);
+				filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll(PSMAnnotationTypes.getFilterablePsmAnnotationTypes(TPPConstants.SEARCH_PROGRAM_NAME_IPROPHET, analysis.getHasIProphetData()));
+
+			}
+		}
+
+		// add peptideprophet
 		{
-			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
-			searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
-			
-			FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
-			psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
-			filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll( PSMAnnotationTypes.getFilterablePsmAnnotationTypes( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET ) );
-			
+			SearchProgram searchProgram = new SearchProgram();
+			searchPrograms.getSearchProgram().add(searchProgram);
+
+			searchProgram.setName(TPPConstants.SEARCH_PROGRAM_NAME_PPROPHET);
+			searchProgram.setDisplayName(TPPConstants.SEARCH_PROGRAM_NAME_PPROPHET);
+			searchProgram.setVersion(PepXMLUtils.getTPPVersion(analysis));
+
+			{
+				PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
+				searchProgram.setPsmAnnotationTypes(psmAnnotationTypes);
+
+				FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
+				psmAnnotationTypes.setFilterablePsmAnnotationTypes(filterablePsmAnnotationTypes);
+				filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll(PSMAnnotationTypes.getFilterablePsmAnnotationTypes(TPPConstants.SEARCH_PROGRAM_NAME_PPROPHET, analysis.getHasIProphetData()));
+
+			}
 		}
 		
+		
+		// add kojak
+		{
+			SearchProgram searchProgram = new SearchProgram();
+			searchPrograms.getSearchProgram().add(searchProgram);
+
+			searchProgram.setName(TPPConstants.SEARCH_PROGRAM_NAME_KOJAK);
+			searchProgram.setDisplayName(TPPConstants.SEARCH_PROGRAM_NAME_KOJAK);
+			searchProgram.setVersion(PepXMLUtils.getKojakVersionFromXML(analysis.getAnalysis()));
+
+			{
+				PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
+				searchProgram.setPsmAnnotationTypes(psmAnnotationTypes);
+
+				FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
+				psmAnnotationTypes.setFilterablePsmAnnotationTypes(filterablePsmAnnotationTypes);
+				filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll(PSMAnnotationTypes.getFilterablePsmAnnotationTypes(TPPConstants.SEARCH_PROGRAM_NAME_KOJAK, analysis.getHasIProphetData()));
+
+				DescriptivePsmAnnotationTypes descriptivePsmAnnotationTypes = new DescriptivePsmAnnotationTypes();
+				psmAnnotationTypes.setDescriptivePsmAnnotationTypes(descriptivePsmAnnotationTypes);
+				descriptivePsmAnnotationTypes.getDescriptivePsmAnnotationType().addAll(PSMAnnotationTypes.getDescriptivePsmAnnotationTypes(TPPConstants.SEARCH_PROGRAM_NAME_KOJAK));
+			}
+		}
+
 		//
 		// Define which annotation types are visible by default
 		//
 		DefaultVisibleAnnotations xmlDefaultVisibleAnnotations = new DefaultVisibleAnnotations();
 		searchProgramInfo.setDefaultVisibleAnnotations( xmlDefaultVisibleAnnotations );
-		
+
 		VisiblePsmAnnotations xmlVisiblePsmAnnotations = new VisiblePsmAnnotations();
 		xmlDefaultVisibleAnnotations.setVisiblePsmAnnotations( xmlVisiblePsmAnnotations );
 
-		xmlVisiblePsmAnnotations.getSearchAnnotation().addAll( PSMDefaultVisibleAnnotationTypes.getDefaultVisibleAnnotationTypes() );
-		
-		
-		// add peptideprophet
-		searchProgram = new SearchProgram();
-		searchPrograms.getSearchProgram().add( searchProgram );
-		
-		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET );
-		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET  );
-		searchProgram.setVersion( PepXMLUtils.getTPPVersion( analysis ) );
-		
-		{
-			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
-			searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
-			
-			FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
-			psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
-			filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll( PSMAnnotationTypes.getFilterablePsmAnnotationTypes( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET ) );
-			
-		}
-		
-		
-		// add kojak
-		searchProgram = new SearchProgram();
-		searchPrograms.getSearchProgram().add( searchProgram );
-		
-		searchProgram.setName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
-		searchProgram.setDisplayName( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK  );
-		searchProgram.setVersion( PepXMLUtils.getKojakVersionFromXML( analysis.getAnalysis() ) );
-		
-		{
-			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
-			searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
-			
-			FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
-			psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
-			filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().addAll( PSMAnnotationTypes.getFilterablePsmAnnotationTypes( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK ) );
-			
-			DescriptivePsmAnnotationTypes descriptivePsmAnnotationTypes = new DescriptivePsmAnnotationTypes();
-			psmAnnotationTypes.setDescriptivePsmAnnotationTypes( descriptivePsmAnnotationTypes );
-			descriptivePsmAnnotationTypes.getDescriptivePsmAnnotationType().addAll( PSMAnnotationTypes.getDescriptivePsmAnnotationTypes( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK ) );
-		}
-		
-		
-		/*
-		 * Define the default import cutoffs
-		 */
-		if( analysis.getImportFilter() != null  && analysis.getImportFilter().floatValue() < 1.0 ) {
-			AnnotationCutoffsOnImport annotationCutoffsOnImport = new AnnotationCutoffsOnImport();
-			searchProgramInfo.setAnnotationCutoffsOnImport( annotationCutoffsOnImport );
-			
-			PsmAnnotationCutoffsOnImport psmAnnotationCutoffsOnImport = new PsmAnnotationCutoffsOnImport();
-			annotationCutoffsOnImport.setPsmAnnotationCutoffsOnImport( psmAnnotationCutoffsOnImport );
-			
-			SearchAnnotationCutoff searchAnnotationCutoff = new SearchAnnotationCutoff();
-			searchAnnotationCutoff.setAnnotationName( PSMAnnotationTypes.IPROPHET_ANNOTATION_TYPE_ERROR );
-			searchAnnotationCutoff.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
-			searchAnnotationCutoff.setCutoffValue( analysis.getImportFilter() );
-			
-			psmAnnotationCutoffsOnImport.getSearchAnnotationCutoff().add( searchAnnotationCutoff );
-		}
+		xmlVisiblePsmAnnotations.getSearchAnnotation().addAll( PSMDefaultVisibleAnnotationTypes.getDefaultVisibleAnnotationTypes(analysis.getHasIProphetData()) );
 		
 		//
 		// Define the linker information
@@ -321,7 +309,7 @@ public class XMLBuilder {
 		Collection<String> peptides = new HashSet<>();
 		
 		// iterate over each distinct reported peptide
-		for( IProphetReportedPeptide rp : resultsByReportedPeptide.keySet() ) {
+		for( TPPReportedPeptide rp : resultsByReportedPeptide.keySet() ) {
 			
 			peptides.add( rp.getPeptide1().getSequence() );
 			if( rp.getPeptide2() != null ) peptides.add( rp.getPeptide2().getSequence() );
@@ -331,9 +319,9 @@ public class XMLBuilder {
 			
 			xmlReportedPeptide.setReportedPeptideString( rp.toString() );
 			
-			if( rp.getType() == IProphetConstants.LINK_TYPE_CROSSLINK )
+			if( rp.getType() == TPPConstants.LINK_TYPE_CROSSLINK )
 				xmlReportedPeptide.setType( LinkType.CROSSLINK );
-			else if( rp.getType() == IProphetConstants.LINK_TYPE_LOOPLINK )
+			else if( rp.getType() == TPPConstants.LINK_TYPE_LOOPLINK )
 				xmlReportedPeptide.setType( LinkType.LOOPLINK );
 			else
 				xmlReportedPeptide.setType( LinkType.UNLINKED );
@@ -369,7 +357,7 @@ public class XMLBuilder {
 				}
 				
 				// add in the linked position(s) in this peptide
-				if( rp.getType() == IProphetConstants.LINK_TYPE_CROSSLINK || rp.getType() == IProphetConstants.LINK_TYPE_LOOPLINK ) {
+				if( rp.getType() == TPPConstants.LINK_TYPE_CROSSLINK || rp.getType() == TPPConstants.LINK_TYPE_LOOPLINK ) {
 					
 					LinkedPositions xmlLinkedPositions = new LinkedPositions();
 					xmlPeptide.setLinkedPositions( xmlLinkedPositions );
@@ -378,7 +366,7 @@ public class XMLBuilder {
 					xmlLinkedPositions.getLinkedPosition().add( xmlLinkedPosition );
 					xmlLinkedPosition.setPosition( new BigInteger( String.valueOf( rp.getPosition1() ) ) );
 					
-					if( rp.getType() == IProphetConstants.LINK_TYPE_LOOPLINK ) {
+					if( rp.getType() == TPPConstants.LINK_TYPE_LOOPLINK ) {
 						
 						xmlLinkedPosition = new LinkedPosition();
 						xmlLinkedPositions.getLinkedPosition().add( xmlLinkedPosition );
@@ -428,7 +416,7 @@ public class XMLBuilder {
 				}
 				
 				// add in the linked position in this peptide
-				if( rp.getType() == IProphetConstants.LINK_TYPE_CROSSLINK ) {
+				if( rp.getType() == TPPConstants.LINK_TYPE_CROSSLINK ) {
 					
 					LinkedPositions xmlLinkedPositions = new LinkedPositions();
 					xmlPeptide.setLinkedPositions( xmlLinkedPositions );
@@ -454,7 +442,7 @@ public class XMLBuilder {
 			xmlReportedPeptide.setPsms( xmlPsms );
 			
 			// iterate over all PSMs for this reported peptide
-			for( IProphetResult result : resultsByReportedPeptide.get( rp ) ) {
+			for( TPPResult result : resultsByReportedPeptide.get( rp ) ) {
 				Psm xmlPsm = new Psm();
 				xmlPsms.getPsm().add( xmlPsm );
 				
@@ -462,40 +450,52 @@ public class XMLBuilder {
 				xmlPsm.setPrecursorCharge( new BigInteger( String.valueOf( result.getCharge() ) ) );
 				xmlPsm.setScanFileName( result.getScanFile() );
 				
-				if( rp.getType() == IProphetConstants.LINK_TYPE_CROSSLINK || rp.getType() == IProphetConstants.LINK_TYPE_LOOPLINK )
+				if( rp.getType() == TPPConstants.LINK_TYPE_CROSSLINK || rp.getType() == TPPConstants.LINK_TYPE_LOOPLINK )
 					xmlPsm.setLinkerMass( result.getLinkerMass() );
 				
 				// add in the filterable PSM annotations (e.g., score)
 				FilterablePsmAnnotations xmlFilterablePsmAnnotations = new FilterablePsmAnnotations();
 				xmlPsm.setFilterablePsmAnnotations( xmlFilterablePsmAnnotations );
 				
-				// handle iprophet error
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
-					
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.IPROPHET_ANNOTATION_TYPE_ERROR );
-					xmlFilterablePsmAnnotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
-					xmlFilterablePsmAnnotation.setValue( errorAnalysis.getError( result.getInterProphetScore() ) );
+				if(analysis.getHasIProphetData()) {
+					{
+						// handle iprophet error
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
+
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.IPROPHET_ANNOTATION_TYPE_ERROR);
+						xmlFilterablePsmAnnotation.setSearchProgram(TPPConstants.SEARCH_PROGRAM_NAME_IPROPHET);
+						xmlFilterablePsmAnnotation.setValue(iProphetErrorAnalysis.getError(result.getInterProphetScore()));
+					}
+
+					// handle iprophet score
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
+
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.IPROPHET_ANNOTATION_TYPE_SCORE);
+						xmlFilterablePsmAnnotation.setSearchProgram(TPPConstants.SEARCH_PROGRAM_NAME_IPROPHET);
+						xmlFilterablePsmAnnotation.setValue(result.getInterProphetScore());
+					}
 				}
 
-				// handle iprophet score
 				{
+					// handle pprophet error
 					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
-					
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.IPROPHET_ANNOTATION_TYPE_SCORE );
-					xmlFilterablePsmAnnotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET );
-					xmlFilterablePsmAnnotation.setValue( result.getInterProphetScore() );
+					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
+
+					xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.PPROPHET_ANNOTATION_TYPE_ERROR);
+					xmlFilterablePsmAnnotation.setSearchProgram(TPPConstants.SEARCH_PROGRAM_NAME_PPROPHET);
+					xmlFilterablePsmAnnotation.setValue(pProphetErrorAnalysis.getError(result.getPeptideProphetScore()));
 				}
-				
+
 				// handle peptideprophet score
 				{
 					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
 					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
 					
 					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.PPROPHET_ANNOTATION_TYPE_SCORE );
-					xmlFilterablePsmAnnotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET );
+					xmlFilterablePsmAnnotation.setSearchProgram( TPPConstants.SEARCH_PROGRAM_NAME_PPROPHET );
 					xmlFilterablePsmAnnotation.setValue( result.getPeptideProphetScore() );
 				}
 				
@@ -505,7 +505,7 @@ public class XMLBuilder {
 					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
 					
 					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.KOJAK_ANNOTATION_TYPE_SCORE );
-					xmlFilterablePsmAnnotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
+					xmlFilterablePsmAnnotation.setSearchProgram( TPPConstants.SEARCH_PROGRAM_NAME_KOJAK );
 					xmlFilterablePsmAnnotation.setValue( result.getKojakScore() );
 				}
 				
@@ -519,7 +519,7 @@ public class XMLBuilder {
 					xmlDescriptivePsmAnnotations.getDescriptivePsmAnnotation().add( xmlDescriptivePsmAnnotation );
 					
 					xmlDescriptivePsmAnnotation.setAnnotationName( PSMAnnotationTypes.KOJAK_ANNOTATION_TYPE_PPMERROR );
-					xmlDescriptivePsmAnnotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
+					xmlDescriptivePsmAnnotation.setSearchProgram( TPPConstants.SEARCH_PROGRAM_NAME_KOJAK );
 					
 					// try to limit this value to the chosen number of decimal places
 					xmlDescriptivePsmAnnotation.setValue( String.valueOf( result.getPpmError() ) );
@@ -531,7 +531,7 @@ public class XMLBuilder {
 					xmlDescriptivePsmAnnotations.getDescriptivePsmAnnotation().add( xmlDescriptivePsmAnnotation );
 					
 					xmlDescriptivePsmAnnotation.setAnnotationName( PSMAnnotationTypes.KOJAK_ANNOTATION_TYPE_DELTASCORE );
-					xmlDescriptivePsmAnnotation.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
+					xmlDescriptivePsmAnnotation.setSearchProgram( TPPConstants.SEARCH_PROGRAM_NAME_KOJAK );
 					
 					// try to limit this value to the chosen number of decimal places
 					xmlDescriptivePsmAnnotation.setValue( String.valueOf( result.getDeltaScore() ) );
@@ -564,7 +564,7 @@ public class XMLBuilder {
 			ConfigurationFile xmlConfigurationFile = new ConfigurationFile();
 			xmlConfigurationFiles.getConfigurationFile().add( xmlConfigurationFile );
 			
-			xmlConfigurationFile.setSearchProgram( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK );
+			xmlConfigurationFile.setSearchProgram( TPPConstants.SEARCH_PROGRAM_NAME_KOJAK );
 			xmlConfigurationFile.setFileName( kojakConfFile.getName() );
 			xmlConfigurationFile.setFileContent( Files.readAllBytes( FileSystems.getDefault().getPath( kojakConfFile.getAbsolutePath() ) ) );
 		}

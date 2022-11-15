@@ -1,6 +1,6 @@
 package org.yeastrc.proxl.xml.kojak_tpp.constants;
 
-public class IProphetConstants {
+public class TPPConstants {
 
 	public static final String SEARCH_PROGRAM_NAME_KOJAK = "Kojak";
 	public static final String SEARCH_PROGRAM_NAME_IPROPHET = "iProphet";

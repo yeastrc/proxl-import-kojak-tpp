@@ -2,13 +2,11 @@ package org.yeastrc.proxl.xml.kojak_tpp.main;
 
 import org.apache.commons.lang3.StringUtils;
 import org.yeastrc.proxl.xml.kojak_tpp.constants.ConverterConstants;
-import org.yeastrc.proxl.xml.kojak_tpp.constants.IProphetConstants;
 import picocli.CommandLine;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
-import java.math.BigDecimal;
 
 /**
  * Run the program.
@@ -42,12 +40,6 @@ public class MainProgram implements Runnable {
 
 	@CommandLine.Option(names = { "-d", "--decoy-string" }, required = false, description = "[Optional] Override the value for the decoy prefix found in the Kojak conf file. May be used multiple times to specify multiple decoy strings.")
 	private String[] decoyString;
-
-	@CommandLine.Option(names = { "-i", "--import-filter" }, required = false, description = "[Optional] Only PSMs with an error <= this" +
-			" value will be imported into ProXL. Default" +
-			" is 0.05. Set to 1 or more to disable" +
-			" import filtering.")
-	private BigDecimal importFilterCutoff;
 
 	@CommandLine.Option(names = { "-v", "--verbose" }, required = false, description = "[Optional] If present, complete error messages will be printed. Useful for debugging errors.")
 	private boolean verboseRequested = false;
@@ -104,7 +96,6 @@ public class MainProgram implements Runnable {
         System.err.println( "\tpepXML path: " + pepXMLFile.getAbsolutePath() );
         System.err.println( "\toutput file path: " + outFile.getAbsolutePath() );
         System.err.println( "\tfasta file path: " + fastaFile.getAbsolutePath() );
-        System.err.println( "\timport cutoff: " + ( importFilterCutoff == null ? IProphetConstants.DEFAULT_IMPORT_CUTOFF : importFilterCutoff.toString() ) );
         System.err.println( "\tkojak conf file paths: " );
         for( File kojakConfFile : kojakConfFiles) {
         	 System.err.println( "\t\t" + kojakConfFile.getAbsolutePath() );
@@ -122,8 +113,7 @@ public class MainProgram implements Runnable {
 	        		          outFile.getAbsolutePath(),
 	        		          fastaFile.getAbsolutePath(),
 	        		          kojakConfFiles,
-	        		          decoyString,
-	        		          importFilterCutoff
+	        		          decoyString
 	        		         );
         } catch( Throwable t ) {
 

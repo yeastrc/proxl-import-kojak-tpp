@@ -8,7 +8,7 @@ import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.S
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.AnalysisResult;
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis.MsmsRunSummary.SpectrumQuery.SearchResult.SearchHit.Xlink.LinkedPeptide;
-import org.yeastrc.proxl.xml.kojak_tpp.constants.IProphetConstants;
+import org.yeastrc.proxl.xml.kojak_tpp.constants.TPPConstants;
 import org.yeastrc.proxl.xml.kojak_tpp.utils.PepXMLUtils;
 
 import java.math.BigDecimal;
@@ -21,13 +21,13 @@ import java.util.HashSet;
  * @author mriffle
  *
  */
-public class IProphetProteinNameCollector {
+public class TPPProteinNameCollector {
 
-	private static final IProphetProteinNameCollector _INSTANCE = new IProphetProteinNameCollector();
-	public static IProphetProteinNameCollector getInstance() { return _INSTANCE; }
-	private IProphetProteinNameCollector() { }
+	private static final TPPProteinNameCollector _INSTANCE = new TPPProteinNameCollector();
+	public static TPPProteinNameCollector getInstance() { return _INSTANCE; }
+	private TPPProteinNameCollector() { }
 	
-	public Collection<String> getProteinNames( IProphetAnalysis analysis ) throws Exception {
+	public Collection<String> getProteinNames( TPPAnalysis analysis ) throws Exception {
 		
 		Collection<String> proteinNames = new HashSet<String>();
 		
@@ -50,7 +50,7 @@ public class IProphetProteinNameCollector {
 								if( ipresult.getProbability().compareTo( new BigDecimal( "0" ) ) == 0 )
 									continue;
 								
-								if( PepXMLUtils.getHitType( searchHit ) == IProphetConstants.LINK_TYPE_CROSSLINK ) {
+								if( PepXMLUtils.getHitType( searchHit ) == TPPConstants.LINK_TYPE_CROSSLINK ) {
 									
 									for( LinkedPeptide linkedPeptide : searchHit.getXlink().getLinkedPeptide() ) {
 										

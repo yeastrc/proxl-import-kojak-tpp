@@ -1,33 +1,31 @@
 package org.yeastrc.proxl.xml.kojak_tpp.main;
 
 import org.yeastrc.proxl.xml.kojak_tpp.builder.XMLBuilder;
-import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetReportedPeptide;
-import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetResult;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.TPPReportedPeptide;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.TPPResult;
 import org.yeastrc.proxl.xml.kojak_tpp.reader.*;
+import org.yeastrc.proxl.xml.kojak_tpp.utils.PepXMLUtils;
 
 import java.io.File;
-import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 
 public class ConverterRunner {
-
-	// quickly get a new instance of this class
-	public static ConverterRunner createInstance() { return new ConverterRunner(); }
 
 	public void runConversion( String pepXMLFilePath,
             String outFilePath,
             String fastaFilePath,
             File[] kojakConfFiles,
-            String[] decoyIdentifiers,
-            BigDecimal importCutoff
+            String[] decoyIdentifiers
            ) throws Exception {
-		
 		
 		///////// Set up config parameters ////////////////////
 		
 		System.err.print( "Loading configuration..." );
 		
-		IProphetAnalysis analysis = IProphetAnalysis.loadAnalysis( pepXMLFilePath );
+		TPPAnalysis analysis = TPPAnalysis.loadAnalysis( pepXMLFilePath );
 		analysis.setKojakConfReader( KojakConfReader.getInstance( kojakConfFiles[0].getAbsolutePath() ) );
 
 		if(decoyIdentifiers == null) {
@@ -42,40 +40,49 @@ public class ConverterRunner {
 
 		analysis.setFastaFile( new File( fastaFilePath ) );
 		analysis.setKojakConfFilePaths( Arrays.asList(kojakConfFiles) );
-		if( importCutoff != null )
-			analysis.setImportFilter( importCutoff );
 
 		System.err.println( "Done." );
-		
-		
+
+
+		///////// Determine if Data contain iProphet Results ////////////////////
+		System.err.print( "Detecting iProphet results... " );
+		analysis.setHasIProphetData(PepXMLUtils.getHasIProphetData(analysis.getAnalysis()));
+		if(analysis.getHasIProphetData())
+			System.err.println( "iProphet Data Detected." );
+		else
+			System.err.println( "No iProphet Data Detected." );
 		
 		/////////////// Read in the data ////////////////////
 		
 		System.err.print( "Reading data in from pep XML..." );
 		
 		// parse the data from the pepXML into a java data structure suitable for writing as ProXL XML
-		Map<IProphetReportedPeptide, Collection<IProphetResult>> resultsByReportedPeptide = 
-				IProphetResultsParser.getInstance().getResultsFromAnalysis( analysis );
+		Map<TPPReportedPeptide, Collection<TPPResult>> resultsByReportedPeptide =
+				TPPResultsParser.getInstance().getResultsFromAnalysis( analysis );
 		
 		System.err.println( "Done." );
 
 		
 		
 		/////////////////// Perform FDR analysis ////////////////////////
-		
-		System.err.print( "Performing FDR analysis of iProphet data..." );
 
-		TPPErrorAnalysis errorAnalysis = TPPErrorAnalyzer.performPeptideProphetAnalysis( resultsByReportedPeptide );		
-		
-		System.err.println( "Done." );
-		
+		TPPErrorAnalysis iProphetErrorAnalysis = null;
+		if(analysis.getHasIProphetData()) {
+			System.err.print("Performing FDR analysis of InterProphet data...");
+			iProphetErrorAnalysis = TPPErrorAnalyzer.performPeptideProphetAnalysis(resultsByReportedPeptide, TPPErrorAnalyzer.Type.INTERPROPHET);
+			System.err.println("Done.");
+		}
+
+		System.err.print("Performing FDR analysis of PeptideProphet data...");
+		TPPErrorAnalysis pProphetErrorAnalysis = TPPErrorAnalyzer.performPeptideProphetAnalysis(resultsByReportedPeptide, TPPErrorAnalyzer.Type.PEPTIDEPROPHET);
+		System.err.println("Done.");
 		
 		/////////////////////// Write out XML //////////////////////
 		
 		System.err.print( "Writing out XML" );
 
 		XMLBuilder builder = new XMLBuilder();
-		builder.buildAndSaveXML(analysis, resultsByReportedPeptide, errorAnalysis, new File( outFilePath ) );
+		builder.buildAndSaveXML(analysis, resultsByReportedPeptide, pProphetErrorAnalysis, iProphetErrorAnalysis, new File( outFilePath ) );
 		
 		System.err.println( "Done." );
 		

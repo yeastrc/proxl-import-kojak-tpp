@@ -1,7 +1,7 @@
 package org.yeastrc.proxl.xml.kojak_tpp.reader;
 
 import net.systemsbiology.regis_web.pepxml.MsmsPipelineAnalysis;
-import org.yeastrc.proxl.xml.kojak_tpp.constants.IProphetConstants;
+import org.yeastrc.proxl.xml.kojak_tpp.constants.TPPConstants;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
@@ -9,7 +9,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.util.Collection;
 
-public class IProphetAnalysis {
+public class TPPAnalysis {
 
 	/**
 	 * Load the data contained in the supplied pepXML file.
@@ -18,14 +18,14 @@ public class IProphetAnalysis {
 	 * @return
 	 * @throws Exception
 	 */
-	public static IProphetAnalysis loadAnalysis( String filename ) throws Exception {
+	public static TPPAnalysis loadAnalysis(String filename ) throws Exception {
 		
 		File pepXMLFile = new File( filename );
 		JAXBContext jaxbContext = JAXBContext.newInstance(MsmsPipelineAnalysis.class);
 		Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
 		MsmsPipelineAnalysis msAnalysis = (MsmsPipelineAnalysis)jaxbUnmarshaller.unmarshal(pepXMLFile);
 		
-		IProphetAnalysis ipa = new IProphetAnalysis();
+		TPPAnalysis ipa = new TPPAnalysis();
 		ipa.setAnalysis( msAnalysis );
 		return ipa;
 		
@@ -37,7 +37,8 @@ public class IProphetAnalysis {
 	private KojakConfReader kojakConfReader;
 	private File fastaFile;
 	private Collection<File> kojakConfFiles;
-	private BigDecimal importFilter = new BigDecimal( IProphetConstants.DEFAULT_IMPORT_CUTOFF );
+	private BigDecimal importFilter = new BigDecimal( TPPConstants.DEFAULT_IMPORT_CUTOFF );
+	private Boolean hasIProphetData = false;
 	
 	/**
 	 * Get the root element of the pepXML file as a JAXB object
@@ -104,7 +105,12 @@ public class IProphetAnalysis {
 	public void setImportFilter(BigDecimal importFilter) {
 		this.importFilter = importFilter;
 	}
-	
-	
-	
+
+	public Boolean getHasIProphetData() {
+		return hasIProphetData;
+	}
+
+	public void setHasIProphetData(Boolean hasIProphetData) {
+		this.hasIProphetData = hasIProphetData;
+	}
 }

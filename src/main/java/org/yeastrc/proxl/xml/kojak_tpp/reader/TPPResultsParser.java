@@ -13,24 +13,22 @@ import org.yeastrc.proteomics.fasta.FASTAEntry;
 import org.yeastrc.proteomics.fasta.FASTAFileParser;
 import org.yeastrc.proteomics.fasta.FASTAFileParserFactory;
 import org.yeastrc.proteomics.fasta.FASTAHeader;
-import org.yeastrc.proxl.xml.kojak_tpp.constants.IProphetConstants;
+import org.yeastrc.proxl.xml.kojak_tpp.constants.TPPConstants;
 import org.yeastrc.proxl.xml.kojak_tpp.constants.KojakConstants;
-import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetPeptide;
-import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetReportedPeptide;
-import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetResult;
-import org.yeastrc.proxl.xml.kojak_tpp.utils.KojakUtils;
-import org.yeastrc.proxl.xml.kojak_tpp.utils.ModUtils;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.TPPPeptide;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.TPPReportedPeptide;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.TPPResult;
 import org.yeastrc.proxl.xml.kojak_tpp.utils.PepXMLUtils;
 import org.yeastrc.proxl.xml.kojak_tpp.utils.ScanParsingUtils;
 
 import java.math.BigDecimal;
 import java.util.*;
 
-public class IProphetResultsParser {
+public class TPPResultsParser {
 
-	private static final IProphetResultsParser _INSTANCE = new IProphetResultsParser();
-	public static IProphetResultsParser getInstance() { return _INSTANCE; }
-	private IProphetResultsParser() { }
+	private static final TPPResultsParser _INSTANCE = new TPPResultsParser();
+	public static TPPResultsParser getInstance() { return _INSTANCE; }
+	private TPPResultsParser() { }
 	
 	/**
 	 * Get the results of the analysis back in the form used by proxl:
@@ -41,32 +39,32 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	public Map<IProphetReportedPeptide, Collection<IProphetResult>> getResultsFromAnalysis( IProphetAnalysis analysis ) throws Exception {
+	public Map<TPPReportedPeptide, Collection<TPPResult>> getResultsFromAnalysis(TPPAnalysis analysis ) throws Exception {
 		
-		Map<IProphetReportedPeptide, Collection<IProphetResult>> results = new HashMap<IProphetReportedPeptide, Collection<IProphetResult>>();		
+		Map<TPPReportedPeptide, Collection<TPPResult>> results = new HashMap<TPPReportedPeptide, Collection<TPPResult>>();
 		
 		for( MsmsRunSummary runSummary : analysis.getAnalysis().getMsmsRunSummary() ) {
 			for( SpectrumQuery spectrumQuery : runSummary.getSpectrumQuery() ) {
 				for( SearchResult searchResult : spectrumQuery.getSearchResult() ) {
 					for( SearchHit searchHit : searchResult.getSearchHit() ) {
 						for( AnalysisResult analysisResult : searchHit.getAnalysisResult() ) {
-							if( analysisResult.getAnalysis().equals( "interprophet" ) ) {
+							if( analysisResult.getAnalysis().equals( "peptideprophet" ) ) {
 								
-								// only one interprophet result will appear for a search hit, and we are only
-								// interested in search hits with an interprophet result.
+								// only one peptideprophet result will appear for a search hit, and we are only
+								// interested in search hits with a peptideprophet result.
 								
 								// skip this if it's a decoy
 								if( PepXMLUtils.isDecoy( analysis.getDecoyIdentifiers(), searchHit) )
 									continue;
 								
 								// get our result
-								IProphetResult result = getResult( runSummary, spectrumQuery, searchHit );
+								TPPResult result = getResult(runSummary, spectrumQuery, searchHit, analysis);
 								
 								// get our reported peptide
-								IProphetReportedPeptide reportedPeptide = getReportedPeptide( searchHit, analysis );
+								TPPReportedPeptide reportedPeptide = getReportedPeptide(searchHit, analysis);
 								
 								if( !results.containsKey( reportedPeptide ) )
-									results.put( reportedPeptide, new ArrayList<IProphetResult>() );
+									results.put( reportedPeptide, new ArrayList<TPPResult>() );
 								
 								results.get( reportedPeptide ).add( result );
 
@@ -80,11 +78,11 @@ public class IProphetResultsParser {
 								 * To address this, iterate over the other search hits for this search result, and keep all other
 								 * rank 1 hits that are merely leucine/isoleucine substitutions of the scored rank 1 hit.
 								 */
-								Collection<IProphetReportedPeptide> otherReportedPeptides = getAllLeucineIsoleucineSubstitutions( reportedPeptide, searchResult, analysis );
+								Collection<TPPReportedPeptide> otherReportedPeptides = getAllLeucineIsoleucineSubstitutions( reportedPeptide, searchResult, analysis );
 								
-								for( IProphetReportedPeptide otherReportedPeptide : otherReportedPeptides ) {									
+								for( TPPReportedPeptide otherReportedPeptide : otherReportedPeptides ) {
 									if( !results.containsKey( otherReportedPeptide ) )
-										results.put( otherReportedPeptide, new ArrayList<IProphetResult>() );
+										results.put( otherReportedPeptide, new ArrayList<TPPResult>() );
 									
 									results.get( otherReportedPeptide ).add( result );
 								}
@@ -103,7 +101,7 @@ public class IProphetResultsParser {
 		 * proteins in the FASTA file exclusively match to decoys or not. If they do, remove them.
 		 */
 		
-		Collection<IProphetReportedPeptide> reportedPeptidesToConfirm = new HashSet<>();
+		Collection<TPPReportedPeptide> reportedPeptidesToConfirm = new HashSet<>();
 		reportedPeptidesToConfirm.addAll( results.keySet() );
 		
 		if( reportedPeptidesToConfirm.size() > 0 ) {
@@ -114,7 +112,7 @@ public class IProphetResultsParser {
 			// cache the relevant protein sequences
 			Map<String, String> proteinSequences = new HashMap<>();	
 			
-			for( IProphetReportedPeptide reportedPeptide : reportedPeptidesToConfirm ) {
+			for( TPPReportedPeptide reportedPeptide : reportedPeptidesToConfirm ) {
 				proteinNames.addAll( reportedPeptide.getPeptide1().getTargetProteins() );
 				if( reportedPeptide.getPeptide2() != null )
 					proteinNames.addAll( reportedPeptide.getPeptide2().getTargetProteins() );
@@ -138,7 +136,7 @@ public class IProphetResultsParser {
 			
 			// now have cache of relevant protein names and sequences. iterate over the reportedPeptidesToConfirm and
 			// remove associated proteins from peptides where that peptide is not actually found in that protein
-			for( IProphetReportedPeptide reportedPeptide : reportedPeptidesToConfirm ) {
+			for( TPPReportedPeptide reportedPeptide : reportedPeptidesToConfirm ) {
 				
 				for (Iterator<String> i = reportedPeptide.getPeptide1().getTargetProteins().iterator(); i.hasNext();) {
 					String protein = i.next();
@@ -157,7 +155,7 @@ public class IProphetResultsParser {
 				}
 				
 				
-				if( reportedPeptide.getType() == IProphetConstants.LINK_TYPE_CROSSLINK ) {
+				if( reportedPeptide.getType() == TPPConstants.LINK_TYPE_CROSSLINK ) {
 					
 					for (Iterator<String> i = reportedPeptide.getPeptide2().getTargetProteins().iterator(); i.hasNext();) {
 						String protein = i.next();
@@ -181,14 +179,14 @@ public class IProphetResultsParser {
 			
 			// now we can iterate over the reportedPeptidesToConfirm and remove any from our results where there are 0
 			// targetProteins left for a peptide
-			for( IProphetReportedPeptide reportedPeptide : reportedPeptidesToConfirm ) {
+			for( TPPReportedPeptide reportedPeptide : reportedPeptidesToConfirm ) {
 				
 				if( reportedPeptide.getPeptide1().getTargetProteins().size() < 1 ) {
 					System.out.println( "INFO: Removing " + reportedPeptide + " from results, does not match a target protein." );
 					results.remove( reportedPeptide );
 				}
 				
-				else if( reportedPeptide.getType() == IProphetConstants.LINK_TYPE_CROSSLINK && reportedPeptide.getPeptide2().getTargetProteins().size() < 1) {
+				else if( reportedPeptide.getType() == TPPConstants.LINK_TYPE_CROSSLINK && reportedPeptide.getPeptide2().getTargetProteins().size() < 1) {
 					System.out.println( "INFO: Removing " + reportedPeptide + " from results, does not match a target protein." );
 					results.remove( reportedPeptide );
 				}
@@ -216,14 +214,14 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private Collection<IProphetReportedPeptide>  getAllLeucineIsoleucineSubstitutions( IProphetReportedPeptide reportedPeptide, SearchResult searchResult, IProphetAnalysis analysis ) throws Exception {
+	private Collection<TPPReportedPeptide>  getAllLeucineIsoleucineSubstitutions(TPPReportedPeptide reportedPeptide, SearchResult searchResult, TPPAnalysis analysis ) throws Exception {
 		
 		//System.out.println( "Calling getAllLeucineIsoleucineSubstitutions()" );
 		
-		Collection<IProphetReportedPeptide> reportedPeptides = new HashSet<IProphetReportedPeptide>();
+		Collection<TPPReportedPeptide> reportedPeptides = new HashSet<TPPReportedPeptide>();
 				
 		for( SearchHit otherSearchHit : searchResult.getSearchHit() ) {
-			IProphetReportedPeptide otherReportedPeptide = getReportedPeptide( otherSearchHit, analysis );
+			TPPReportedPeptide otherReportedPeptide = getReportedPeptide( otherSearchHit, analysis );
 
 			// if they're not the same type, there's no match
 			if( reportedPeptide.getType() != otherReportedPeptide.getType() )
@@ -249,12 +247,12 @@ public class IProphetResultsParser {
 				reportedPeptides.add( otherReportedPeptide );
 			} else {
 				
-				if( otherReportedPeptide.getType() == IProphetConstants.LINK_TYPE_CROSSLINK ) {
+				if( otherReportedPeptide.getType() == TPPConstants.LINK_TYPE_CROSSLINK ) {
 					
 					// if we're testing a crosslink, be sure to test the other possible arrangement of peptides 1 and 2
 					
 					// switch peptides 1 and 2
-					IProphetPeptide tmpPeptide = otherReportedPeptide.getPeptide1();
+					TPPPeptide tmpPeptide = otherReportedPeptide.getPeptide1();
 					otherReportedPeptide.setPeptide1( otherReportedPeptide.getPeptide2() );
 					otherReportedPeptide.setPeptide2( tmpPeptide );
 					
@@ -290,7 +288,7 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private Collection<String> getTargetProteinsForSearchHit( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
+	private Collection<String> getTargetProteinsForSearchHit( SearchHit searchHit, TPPAnalysis analysis ) throws Exception {
 		Collection<String> targetProteins = new HashSet<>();
 		
 		String protein = searchHit.getProtein();
@@ -316,7 +314,7 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private Collection<String> getTargetProteinsForLinkedPeptide( LinkedPeptide linkedPeptide, IProphetAnalysis analysis ) throws Exception {
+	private Collection<String> getTargetProteinsForLinkedPeptide( LinkedPeptide linkedPeptide, TPPAnalysis analysis ) throws Exception {
 		Collection<String> targetProteins = new HashSet<>();
 		
 		String protein = linkedPeptide.getProtein();
@@ -341,14 +339,14 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetReportedPeptide getReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
+	private TPPReportedPeptide getReportedPeptide(SearchHit searchHit, TPPAnalysis analysis ) throws Exception {
 		
 		int type = PepXMLUtils.getHitType( searchHit );
 		
-		if( type == IProphetConstants.LINK_TYPE_CROSSLINK )
+		if( type == TPPConstants.LINK_TYPE_CROSSLINK )
 			return getCrosslinkReportedPeptide( searchHit, analysis );
 		
-		if( type == IProphetConstants.LINK_TYPE_LOOPLINK )
+		if( type == TPPConstants.LINK_TYPE_LOOPLINK )
 			return getLooplinkReportedPeptide( searchHit, analysis );
 		
 		return getUnlinkedReportedPeptide( searchHit, analysis );
@@ -361,13 +359,13 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetReportedPeptide getCrosslinkReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
+	private TPPReportedPeptide getCrosslinkReportedPeptide(SearchHit searchHit, TPPAnalysis analysis ) throws Exception {
 		
 		//System.out.println( searchHit.getPeptide() );
 		//System.out.println( "\t" + searchHit.getXlinkType() );
 		
-		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
-		reportedPeptide.setType( IProphetConstants.LINK_TYPE_CROSSLINK );
+		TPPReportedPeptide reportedPeptide = new TPPReportedPeptide();
+		reportedPeptide.setType( TPPConstants.LINK_TYPE_CROSSLINK );
 				
 		for( LinkedPeptide linkedPeptide : searchHit.getXlink().getLinkedPeptide() ) {
 			
@@ -384,7 +382,7 @@ public class IProphetResultsParser {
 			//System.out.println( "\t\t" + linkedPeptide.getPeptide() );
 			//System.out.println( "\t\tpeptide num: " + peptideNumber );
 			
-			IProphetPeptide peptide = getPeptideFromLinkedPeptide( linkedPeptide, analysis );
+			TPPPeptide peptide = getPeptideFromLinkedPeptide( linkedPeptide, analysis );
 			int position = 0;
 			
 			for( NameValueType nvt : linkedPeptide.getXlinkScore() ) {
@@ -422,7 +420,7 @@ public class IProphetResultsParser {
 		if( reportedPeptide.getPeptide1().toString().compareTo( reportedPeptide.getPeptide2().toString() ) > 0 ) {
 
 			// swap them
-			IProphetPeptide tpep = reportedPeptide.getPeptide1();
+			TPPPeptide tpep = reportedPeptide.getPeptide1();
 			int tpos = reportedPeptide.getPosition1();
 			
 			reportedPeptide.setPeptide1( reportedPeptide.getPeptide2() );
@@ -451,16 +449,16 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetReportedPeptide getLooplinkReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
+	private TPPReportedPeptide getLooplinkReportedPeptide(SearchHit searchHit, TPPAnalysis analysis ) throws Exception {
 		
 		//System.out.println( searchHit.getPeptide() );
 		//System.out.println( "\t" + searchHit.getXlinkType() );
 
 		
-		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
+		TPPReportedPeptide reportedPeptide = new TPPReportedPeptide();
 		
 		reportedPeptide.setPeptide1( getPeptideFromSearchHit( searchHit, analysis ) );
-		reportedPeptide.setType( IProphetConstants.LINK_TYPE_LOOPLINK );
+		reportedPeptide.setType( TPPConstants.LINK_TYPE_LOOPLINK );
 		
 		// add in the linked positions
 		Xlink xl = searchHit.getXlink();
@@ -499,12 +497,12 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetReportedPeptide getUnlinkedReportedPeptide( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
+	private TPPReportedPeptide getUnlinkedReportedPeptide(SearchHit searchHit, TPPAnalysis analysis ) throws Exception {
 		
-		IProphetReportedPeptide reportedPeptide = new IProphetReportedPeptide();
+		TPPReportedPeptide reportedPeptide = new TPPReportedPeptide();
 		
 		reportedPeptide.setPeptide1( getPeptideFromSearchHit( searchHit, analysis ) );
-		reportedPeptide.setType( IProphetConstants.LINK_TYPE_UNLINKED );
+		reportedPeptide.setType( TPPConstants.LINK_TYPE_UNLINKED );
 		
 		return reportedPeptide;
 	}
@@ -516,9 +514,9 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetPeptide getPeptideFromSearchHit( SearchHit searchHit, IProphetAnalysis analysis ) throws Exception {
+	private TPPPeptide getPeptideFromSearchHit(SearchHit searchHit, TPPAnalysis analysis ) throws Exception {
 		
-		IProphetPeptide peptide = new IProphetPeptide();
+		TPPPeptide peptide = new TPPPeptide();
 		
 		peptide.setSequence( searchHit.getPeptide() );
 		
@@ -563,9 +561,9 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private IProphetPeptide getPeptideFromLinkedPeptide( LinkedPeptide linkedPeptide, IProphetAnalysis analysis ) throws Exception {
+	private TPPPeptide getPeptideFromLinkedPeptide(LinkedPeptide linkedPeptide, TPPAnalysis analysis ) throws Exception {
 		
-		IProphetPeptide peptide = new IProphetPeptide();
+		TPPPeptide peptide = new TPPPeptide();
 		
 		peptide.setSequence( linkedPeptide.getPeptide() );
 		
@@ -611,9 +609,9 @@ public class IProphetResultsParser {
 	 * @return
 	 * @throws Exception If any of the expected scores are not found
 	 */
-	private IProphetResult getResult( MsmsRunSummary runSummary, SpectrumQuery spectrumQuery, SearchHit searchHit ) throws Exception {
+	private TPPResult getResult(MsmsRunSummary runSummary, SpectrumQuery spectrumQuery, SearchHit searchHit, TPPAnalysis analysis) throws Exception {
 		
-		IProphetResult result = new IProphetResult();
+		TPPResult result = new TPPResult();
 		
 		result.setScanFile( ScanParsingUtils.getFilenameFromReportedScan( spectrumQuery.getSpectrum() ) + runSummary.getRawData() );
 		
@@ -624,7 +622,7 @@ public class IProphetResultsParser {
 		
 		// if this is a crosslink or looplink, get the mass of the linker
 		int type = PepXMLUtils.getHitType( searchHit );
-		if( type == IProphetConstants.LINK_TYPE_CROSSLINK || type == IProphetConstants.LINK_TYPE_LOOPLINK ) {
+		if( type == TPPConstants.LINK_TYPE_CROSSLINK || type == TPPConstants.LINK_TYPE_LOOPLINK ) {
 			Xlink xl = searchHit.getXlink();
 			result.setLinkerMass( xl.getMass() );
 		}
@@ -667,8 +665,8 @@ public class IProphetResultsParser {
 		
 		if( result.getKojakScore() == null )
 			throw new Exception( "Missing kojak score for result: " + spectrumQuery.getSpectrum() );
-		
-		if( result.getInterProphetScore() == null )
+
+		if(analysis.getHasIProphetData() && result.getInterProphetScore() == null )
 			throw new Exception( "Missing iprophet score for result: " + spectrumQuery.getSpectrum() );
 		
 		if( result.getPeptideProphetScore() == null )

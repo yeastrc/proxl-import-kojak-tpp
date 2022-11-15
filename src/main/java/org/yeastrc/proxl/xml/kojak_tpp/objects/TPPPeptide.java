@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.util.*;
 
-public class IProphetPeptide {
+public class TPPPeptide {
 
 	/**
 	 * Get the string representation of this peptide that includes mods, in the form of:

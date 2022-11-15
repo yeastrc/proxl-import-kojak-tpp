@@ -1,8 +1,8 @@
 package org.yeastrc.proxl.xml.kojak_tpp.objects;
 
-import org.yeastrc.proxl.xml.kojak_tpp.constants.IProphetConstants;
+import org.yeastrc.proxl.xml.kojak_tpp.constants.TPPConstants;
 
-public class IProphetReportedPeptide {
+public class TPPReportedPeptide {
 	
 	public int hashCode() {
 		return this.toString().hashCode();
@@ -10,19 +10,19 @@ public class IProphetReportedPeptide {
 	
 	public boolean equals( Object o ) {
 
-		if( !( o instanceof IProphetReportedPeptide) )
+		if( !( o instanceof TPPReportedPeptide) )
 			return false;
 		
-		return this.toString().equals( ((IProphetReportedPeptide)o).toString() );
+		return this.toString().equals( ((TPPReportedPeptide)o).toString() );
 	}
 
 	public String toString() {
 		
-		if( this.getType() == IProphetConstants.LINK_TYPE_UNLINKED ) {
+		if( this.getType() == TPPConstants.LINK_TYPE_UNLINKED ) {
 			return this.getPeptide1().toString();
-		} else if( this.getType() == IProphetConstants.LINK_TYPE_LOOPLINK ) {
+		} else if( this.getType() == TPPConstants.LINK_TYPE_LOOPLINK ) {
 			return this.getPeptide1().toString() + "(" + this.getPosition1() + "," + this.getPosition2() + ")";
-		} else if( this.getType() == IProphetConstants.LINK_TYPE_CROSSLINK ) {
+		} else if( this.getType() == TPPConstants.LINK_TYPE_CROSSLINK ) {
 			return this.getPeptide1().toString() + "(" + this.getPosition1() + ")" + "-" +
         		   this.getPeptide2().toString() + "(" + this.getPosition2() + ")";
 		}
@@ -39,19 +39,19 @@ public class IProphetReportedPeptide {
 		this.type = type;
 	}
 
-	public IProphetPeptide getPeptide1() {
+	public TPPPeptide getPeptide1() {
 		return peptide1;
 	}
 
-	public void setPeptide1(IProphetPeptide peptide1) {
+	public void setPeptide1(TPPPeptide peptide1) {
 		this.peptide1 = peptide1;
 	}
 
-	public IProphetPeptide getPeptide2() {
+	public TPPPeptide getPeptide2() {
 		return peptide2;
 	}
 
-	public void setPeptide2(IProphetPeptide peptide2) {
+	public void setPeptide2(TPPPeptide peptide2) {
 		this.peptide2 = peptide2;
 	}
 
@@ -72,8 +72,8 @@ public class IProphetReportedPeptide {
 	}
 	
 	private int type;
-	private IProphetPeptide peptide1;
-	private IProphetPeptide peptide2;
+	private TPPPeptide peptide1;
+	private TPPPeptide peptide2;
 	private int position1;
 	private int position2;
 	

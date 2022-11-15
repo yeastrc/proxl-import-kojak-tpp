@@ -1,6 +1,6 @@
 package org.yeastrc.proxl.xml.kojak_tpp.annotations;
 
-import org.yeastrc.proxl.xml.kojak_tpp.constants.IProphetConstants;
+import org.yeastrc.proxl.xml.kojak_tpp.constants.TPPConstants;
 import org.yeastrc.proxl_import.api.xml_dto.DescriptivePsmAnnotationType;
 import org.yeastrc.proxl_import.api.xml_dto.FilterDirectionType;
 import org.yeastrc.proxl_import.api.xml_dto.FilterablePsmAnnotationType;
@@ -17,20 +17,22 @@ public class PSMAnnotationTypes {
 	public static final String KOJAK_ANNOTATION_TYPE_PPMERROR = "PPM error";
 	
 	// iProphet scores
-	public static final String IPROPHET_ANNOTATION_TYPE_SCORE = "Probability Score";
-	public static final String IPROPHET_ANNOTATION_TYPE_ERROR = "Error Rate (FDR)";
+	public static final String IPROPHET_ANNOTATION_TYPE_SCORE = "IProphet Score";
+	public static final String IPROPHET_ANNOTATION_TYPE_ERROR = "IProphet FDR";
 	
 	// PeptideProphet scores
-	public static final String PPROPHET_ANNOTATION_TYPE_SCORE = "Probability Score";
-	
+	public static final String PPROPHET_ANNOTATION_TYPE_SCORE = "PProphet Score";
+	public static final String PPROPHET_ANNOTATION_TYPE_ERROR = "PProphet FDR";
+
+
 	/**
 	 * Get the list of filterable PSM annotation types in StavroX data
 	 * @return
 	 */
-	public static List<FilterablePsmAnnotationType> getFilterablePsmAnnotationTypes( String programName ) {
+	public static List<FilterablePsmAnnotationType> getFilterablePsmAnnotationTypes(String programName, Boolean hasIProphetData) {
 		List<FilterablePsmAnnotationType> types = new ArrayList<FilterablePsmAnnotationType>();
 
-		if( programName.equals( IProphetConstants.SEARCH_PROGRAM_NAME_IPROPHET ) ) {
+		if( programName.equals( TPPConstants.SEARCH_PROGRAM_NAME_IPROPHET ) ) {
 			{
 				FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
 				type.setName( IPROPHET_ANNOTATION_TYPE_SCORE );
@@ -54,7 +56,7 @@ public class PSMAnnotationTypes {
 			}
 		}
 
-		else if( programName.equals( IProphetConstants.SEARCH_PROGRAM_NAME_PPROPHET ) ) {
+		else if( programName.equals( TPPConstants.SEARCH_PROGRAM_NAME_PPROPHET ) ) {
 			{
 				FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
 				type.setName( PPROPHET_ANNOTATION_TYPE_SCORE );
@@ -65,9 +67,24 @@ public class PSMAnnotationTypes {
 				
 				types.add( type );
 			}
+			{
+				FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
+				type.setName( PPROPHET_ANNOTATION_TYPE_ERROR );
+				type.setDescription( "Error rate calculated from PeptideProphet probability scores." );
+				type.setDefaultFilterValue( new BigDecimal( "0.01" ) );
+
+				if(!hasIProphetData)
+					type.setDefaultFilter(true);
+				else
+					type.setDefaultFilter(false);
+
+				type.setFilterDirection( FilterDirectionType.BELOW );
+
+				types.add( type );
+			}
 		}
 		
-		else if( programName.equals( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK ) ) {
+		else if( programName.equals( TPPConstants.SEARCH_PROGRAM_NAME_KOJAK ) ) {
 			{
 				FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
 				type.setName( KOJAK_ANNOTATION_TYPE_SCORE );
@@ -90,7 +107,7 @@ public class PSMAnnotationTypes {
 	public static List<DescriptivePsmAnnotationType> getDescriptivePsmAnnotationTypes( String programName ) {
 		List<DescriptivePsmAnnotationType> types = new ArrayList<DescriptivePsmAnnotationType>();
 		
-		if( programName.equals( IProphetConstants.SEARCH_PROGRAM_NAME_KOJAK ) ) {
+		if( programName.equals( TPPConstants.SEARCH_PROGRAM_NAME_KOJAK ) ) {
 			{
 				DescriptivePsmAnnotationType type = new DescriptivePsmAnnotationType();
 				type.setName( KOJAK_ANNOTATION_TYPE_DELTASCORE );

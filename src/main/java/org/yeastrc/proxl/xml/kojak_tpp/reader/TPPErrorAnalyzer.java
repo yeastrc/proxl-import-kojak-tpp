@@ -1,7 +1,7 @@
 package org.yeastrc.proxl.xml.kojak_tpp.reader;
 
-import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetReportedPeptide;
-import org.yeastrc.proxl.xml.kojak_tpp.objects.IProphetResult;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.TPPReportedPeptide;
+import org.yeastrc.proxl.xml.kojak_tpp.objects.TPPResult;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -18,15 +18,18 @@ import java.util.Map;
  */
 public class TPPErrorAnalyzer {
 
-	public static final int TYPE_PEPTIDE_PROPHET = 0;
-	public static final int TYPE_INTER_PROPHET = 1;
+	public enum Type {
+		INTERPROPHET,
+		PEPTIDEPROPHET
+	}
+
 	
 	/**
 	 * Analyze the target/decoy counts in the analysis
 	 * 
 	 * @throws Exception
 	 */
-	public static TPPErrorAnalysis performPeptideProphetAnalysis( Map<IProphetReportedPeptide, Collection<IProphetResult>> tppResults ) throws Exception {
+	public static TPPErrorAnalysis performPeptideProphetAnalysis( Map<TPPReportedPeptide, Collection<TPPResult>> tppResults, Type type ) {
 		
 		Map<BigDecimal, ProbabilitySumCounter> probabilitySums = new HashMap<BigDecimal, ProbabilitySumCounter>();
 		
@@ -34,14 +37,18 @@ public class TPPErrorAnalyzer {
 		 * First, compile a count for targets and decoys for each score reported for all PSMs
 		 */
 		
-		for( IProphetReportedPeptide tppRp : tppResults.keySet() ) {
+		for( TPPReportedPeptide tppRp : tppResults.keySet() ) {
 			
-			for( IProphetResult iProphetResult : tppResults.get( tppRp ) ) {
+			for( TPPResult TPPResult : tppResults.get( tppRp ) ) {
 				
 				
-				BigDecimal score = iProphetResult.getInterProphetScore();
-				
-				
+				BigDecimal score = null;
+
+				if(type == Type.INTERPROPHET)
+					score = TPPResult.getInterProphetScore();
+				else if(type == Type.PEPTIDEPROPHET)
+					score = TPPResult.getPeptideProphetScore();
+
 				ProbabilitySumCounter psc = null;
 				
 				if( probabilitySums.containsKey( score ) ) {

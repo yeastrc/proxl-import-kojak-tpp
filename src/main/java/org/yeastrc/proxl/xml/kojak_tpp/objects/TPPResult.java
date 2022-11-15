@@ -2,7 +2,7 @@ package org.yeastrc.proxl.xml.kojak_tpp.objects;
 
 import java.math.BigDecimal;
 
-public class IProphetResult {
+public class TPPResult {
 
 	private String scanFile;
 	private int scanNumber;
