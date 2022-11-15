@@ -20,10 +20,9 @@ Command line documentation
 ---------------------------
 
 ```
-java -jar kojakTPPToProxl.jar [-hvV] -f=<fastaFile> [-i=<importFilterCutoff>]
-                              -o=<outFile> -x=<pepXMLFile>
-                              [-d=<decoyString>]... -k=<kojakConfFiles>
-                              [-k=<kojakConfFiles>]...
+java -jar kojakTPPToProxl.jar [-hvV] -f=<fastaFile> -o=<outFile>
+                              -x=<pepXMLFile> [-d=<decoyString>]...
+                              -k=<kojakConfFiles> [-k=<kojakConfFiles>]...
 
 Description:
 
@@ -45,10 +44,6 @@ Options:
                              [Optional] Override the value for the decoy prefix
                                found in the Kojak conf file. May be used multiple
                                times to specify multiple decoy strings.
-  -i, --import-filter=<importFilterCutoff>
-                             [Optional] Only PSMs with an error <= this value will
-                               be imported into ProXL. Default is 0.05. Set to 1 or
-                               more to disable import filtering.
   -v, --verbose              [Optional] If present, complete error messages will be
                                printed. Useful for debugging errors.
   -h, --help                 Show this help message and exit.
